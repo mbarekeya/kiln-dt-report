@@ -3,110 +3,110 @@
             <th></th>
             <th>Characteristics</th>
             <th>Description</th>
-        </tr>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>1</sub></td>
+			<td class="characteristic-id">C<sub>1</sub></td>
             <td>System under study</td>
-            <td>A Styrofoam box containing a lid, a heating element, and fan, controlled by a Raspberry Pi, for incubating tempeh.</td>
-        </tr>
+            <td>An industrial wood drying kiln located at La Doré, Quebec, containing two rail systems for lumber loading, a reversible fan, steam heating coils, ventilation dampers, and sensors for temperature and humidity monitoring.</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>2</sub></td>
+			<td class="characteristic-id">C<sub>2</sub></td>
             <td>Physical acting components</td>
-            <td>controller: Controls the fan and heater<br>fan: Circulates air throughout box<br>heater: Raises the temperature of surrounding air<br>power_supply: Powers electrical components</td>
-        </tr>
+            <td>fan: Circulates hot air throughout the kiln chamber; speed varies by drying phase and direction reverses every 2 simulated hours<br>door: Sliding door that closes at cycle start and opens manually by operator at cycle end<br>heater_coils: Steam-fed heating coils that raise dry-bulb temperature progressively from ambient to target Ts across drying phases<br>dampers: Ventilation dampers that regulate the exchange of moist internal air with external air to control relative humidity inside the chamber</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>3</sub></td>
+			<td class="characteristic-id">C<sub>3</sub></td>
             <td>Physical sensing components</td>
-            <td>temp_sensor_1<br>temp_sensor_2<br>temp_sensor_3</td>
-        </tr>
+            <td>th_sensor: Wet-bulb temperature sensor (Th), used with Ts to compute relative humidity via psychrometric equations<br>ts_sensor: Dry-bulb temperature sensor (Ts), measures the air temperature inside the kiln chamber in degrees Celsius</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>4</sub></td>
+			<td class="characteristic-id">C<sub>4</sub></td>
             <td>Physical-to-virtual interaction</td>
-            <td>controller_state_trans<br>temp_readings_trans</td>
-        </tr>
+            <td>sensor_data_trans: Published every 2 real seconds to RabbitMQ queue wood.kiln.sensor as JSON payload containing Ts, Th, derived RH, estimated MC, current phase, elapsed hours, fan speed, fan direction, and cycle status<br>phase_data_trans: Current drying phase index and name, air velocity, fan direction, duration remaining, and progress percentage</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>5</sub></td>
+			<td class="characteristic-id">C<sub>5</sub></td>
             <td>Virtual-to-physical interaction</td>
-            <td>The controller in the PT sends sensor and actuator data on a periodic basis over RabbitMQ.</td>
-        </tr>
+            <td>Operator-triggered: cycle start via RabbitMQ (wood.kiln.start) and stop via HTTP POST /api/stop. Automatic DT control: Ts setpoint adjustment (+-2C) and damper aperture published to wood.kiln.control in response to SLOW_DRYING, FAST_DRYING, and DTAB deviations. Phase extension recommended to operator (advisory only). Operator can override any automatic action.</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>6</sub></td>
+			<td class="characteristic-id">C<sub>6</sub></td>
             <td>DT services</td>
-            <td>safe_adaptation<br>anomaly_detector<br>real_time_viz_service<br>policy_optimization<br>heater_state_estimation_service<br>what_if_sim</td>
-        </tr>
+            <td>mc_estimation_service<br>monitoring_service<br>batch_loading_service<br>intelligent_control_service<br>visualization_3d_service</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>7</sub></td>
+			<td class="characteristic-id">C<sub>7</sub></td>
             <td>Twinning time-scale</td>
-            <td>Real-time<br>Slower than real-time<br>The DT-to-PT synchronization occurs every time the PT sends a message to the DT (on a periodic basis).<br>Faster than real-time</td>
-        </tr>
+            <td>Real-time<br>Slower than real-time<br>Sensor data published every 2 real seconds regardless of TIME_SCALE. Real-time: dashboard and Godot visualization. Slower-than-RT: deviation detection and intelligent control. Faster-than-RT: TIME_SCALE adjustable from 1x to 600x via dashboard slider; default TIME_SCALE=60 (1 simulated hour = 1 real minute).<br>Faster than real-time</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>8</sub></td>
+			<td class="characteristic-id">C<sub>8</sub></td>
             <td>Multiplicities</td>
-            <td>The current implementation has no multiplicities, however, it is possible to deploy multiple DTs for the same PT.</td>
-        </tr>
+            <td>Single kiln DT with one active drying cycle at a time. No composition of multiple DTs. One validated scenario loaded at a time. Multi-kiln multiplicity identified as a planned extension.</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>9</sub></td>
+			<td class="characteristic-id">C<sub>9</sub></td>
             <td>Life-cycle stages</td>
-            <td>The DT supports the design and the service phases. In the service phase, it supports creating, executing, saving, analyzing, evolving, and terminating.</td>
-        </tr>
+            <td>Supports the service phase only: execute (batch validation and real-time monitoring), analyse (deviation detection and recommendations), evolve (automatic Ts/damper adjustment), save (sensor history and post-drying report), and terminate (cycle completion or forced stop). No creation phase — DT infrastructure permanently deployed. DT represents the kiln as-operated.</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>10</sub></td>
+			<td class="characteristic-id">C<sub>10</sub></td>
             <td>DT models and data</td>
-            <td>Model:<br>four_para_model<br>pt_model<br>ANN_state_estimation_model<br>ANN_model<br>two_para_model<br>controller_model<br>env_model<br>pt_and_env_model<br><br>Data:<br>temp_readings_streaming<br>temp_readings_historical<br>controller_state</td>
-        </tr>
+            <td>Model:<br>ward_clustering_model: Hierarchical Ward clustering (scikit-learn) used for scenario D batch loading optimization<br>recipe_model: R40 (EPN/PG, target 16%) and R44 (SAP, target 14%) drying recipes with 7 phases: Heating, Equalization, Auto Steaming 1-3, Fixed Steaming, and Cooling<br>kiln_3d_model: Godot 4.3 3D scene KilnScene with Package.tscn for lumber lots, rail nodes, fan, coils, door, and GPU particles for steam<br>drying_physics_model: Exponential MC decay model: dMC/dt = -k*(MC-THE), with K_DRYING constants per species (EPN=0.08, PG=0.07, SAP=0.05)<br><br>Data:<br>sensor_data_streaming: Real-time sensor data published every 2s to wood.kiln.sensor: Ts, Th, derived RH, estimated MC, phase, elapsed hours, fan speed, fan direction, status<br>history_data: In-memory history of up to 500 data points for dashboard chart reload and post-drying report generation<br>inventory_data: 70 lumber lots generated by seed.py with species, width, length, and initial MC attributes</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>11</sub></td>
+			<td class="characteristic-id">C<sub>11</sub></td>
             <td>Tooling and enablers</td>
-            <td>simulator<br>state_estimator<br>anomaly_detector_enabler<br>optimization_algs<br>dashboard_enabler<br>godot<br>docker<br>influx_db<br>rabbit_mq</td>
-        </tr>
+            <td>scikit_learn_enabler: scikit-learn hierarchical Ward clustering for batch loading scenario D<br>simulator_enabler: Python Simulator.py implementing the 7-phase drying cycle engine, MC decay model, and intelligent control loop<br>chartjs: Chart.js frontend rendering real-time temperature and MC curves, phase progress bars, and KPI cards at port 8080<br>fastapi_enabler: Python FastAPI backend exposing REST endpoints for dashboard interaction, cycle control, and scenario management<br>godot_enabler:  — 3D kiln visualization and operator UI for cycle initiation and batch validation<br>pulp_enabler: PuLP/HiGHS ILP solver for batch loading scenarios A, B, and C<br>docker: Docker Compose orchestrating Python backend and RabbitMQ containers for reproducible deployment<br>rabbit_mq: RabbitMQ AMQP broker handling sensor streaming (wood.kiln.sensor), cycle start (wood.kiln.start), and intelligent control commands (wood.kiln.control)</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>12</sub></td>
+			<td class="characteristic-id">C<sub>12</sub></td>
             <td>DT constellation</td>
-            <td>The orchestration of the system-as-a-whole is carried out by micro-services. These microservices set up the multiple components from configuration files, including the models and data, tools and enablers, services, and physical-to-virtual and virtual-to-physical interaction. It is possible to leave aside some of the micro-services when initializing the DT for testing purposes..</td>
-        </tr>
+            <td> runs on the host machine. Communication uses AMQP (RabbitMQ) for sensor streaming (wood.kiln.sensor), cycle start (wood.kiln.start), and intelligent control commands (wood.kiln.control); and HTTP REST (FastAPI) for dashboard and scenario management.</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>13</sub></td>
+			<td class="characteristic-id">C<sub>13</sub></td>
             <td>Twinning process and DT evolution</td>
-            <td>The DT was engineered based on a joint engineering approach. For the evolution, 10 milestones have been defined: identifying the physics for the PT, building the plant models with, characterizing the heating power, building the first physical prototype, experimentally refining the parameters for the plant model, creating the controller model, deploying the controller code into the physical controller, deploying the visualization service, providing services for state estimation and anomaly detection, and providing the service for optimizing the control policy.</td>
-        </tr>
+            <td>Engineered following a POC-first approach for doctoral research. 6 milestones: M1 simulator + RabbitMQ, M2 FastAPI dashboard, M3 Godot 3D scene, M4 batch optimization (greedy to global SSE), M5 deviation detection and recommendations, M6 intelligent control layer. M1-M5: Digital Shadow. M6: full Digital Twin.</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>14</sub></td>
+			<td class="characteristic-id">C<sub>14</sub></td>
             <td>Fidelity and validity considerations</td>
-            <td>The models have been calibrated against experimental data and the predictive accuracy of the best model is within 2°C. The models have been validated in a controlled environment.</td>
-        </tr>
+            <td>Models based on established wood science literature. Recipes R40/R44 and deviation rules derived from La Doré industrial practice. MC curves qualitatively consistent with industrial observations. K_DRYING not experimentally calibrated. No CFD airflow modeling. POC not formally validated against La Doré experimental data.</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>15</sub></td>
+			<td class="characteristic-id">C<sub>15</sub></td>
             <td>DT technical connection</td>
-            <td>The PT-to-DT connection is done over Wi-Fi on a laptop using RabbitMQ.</td>
-        </tr>
+            <td>AMQP via RabbitMQ (port 5672): sensor streaming, cycle start, and intelligent control commands. HTTP REST via FastAPI (port 8080): dashboard interaction and cycle control. All communication on localhost and Docker internal network. No physical kiln connection — PT emulated by simulator.</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>16</sub></td>
+			<td class="characteristic-id">C<sub>16</sub></td>
             <td>DT hosting/deployment</td>
-            <td>The Incubator DT is deployed locally on a LAN.</td>
-        </tr>
+            <td> on Windows host; web dashboard at port 8080. Platform-independent — portable to Linux or cloud. No cloud deployment in current POC.</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>17</sub></td>
+			<td class="characteristic-id">C<sub>17</sub></td>
             <td>Insights and decision making</td>
-            <td>dashboard_viz<br>anomaly_warning: anomaly detection<br>real_time_viz: 3D visualization of the current state<br>dashboard: dashboard visualization of the current state and historical data<br>heater_state_estimation: state estimation of the heater<br>what_if_sim_results:  what-if analysis for future behavior under different controller configurations<br>controller_control: control policy updates to the PT<br>commands</td>
-        </tr>
+            <td>mc_estimation_result: Real MC (exponential decay) and planned MC (linear reference) updated every 2 real seconds and displayed in dashboard charts and Godot UI<br>stop_command: Operator-triggered stop via dashboard POST /api/stop; publishes stopped status to wood.kiln.sensor; resets Godot UI to door-open state<br>post_drying_report: HTML report generated at cycle completion summarizing start/end time, final MC, DTAB statistics, phase durations, and recommendations for the next cycle<br>monitoring_dashboard: Web dashboard at port 8080 showing MC curves, temperature curves, phase progress, DTAB values, and deviation status<br>batch_scenario: 4 batch loading scenarios (A: max filling, B: highest quality, C: optimal throughput, D: Ward clustering) with KPIs for operator selection<br>start_command: Operator-triggered kiln start via Godot UI or dashboard after scenario validation; sends drying_group, width, initial_mc, total_pmp to wood.kiln.start<br>control_action: Automatic DT control actions published to wood.kiln.control: Ts setpoint adjustment (+-2C) for SLOW_DRYING/FAST_DRYING, damper aperture adjustment for DTAB HIGH/LOW deviations<br>deviation_warning: Deviation status: ON_TARGET, SLOW_DRYING, FAST_DRYING, CHECK_OVERDRYING; DTAB alerts HIGH/LOW/NORMAL displayed on dashboard<br>real_time_viz: 3D visualization of kiln state: lumber color by MC, steam particle intensity, fan rotation and direction, coil light energy by Ts, door open/close<br>phase_extension_recommendation: Advisory recommendation to extend current drying phase when target MC has not been reached; operator confirms or rejects via dashboard</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>18</sub></td>
+			<td class="characteristic-id">C<sub>18</sub></td>
             <td>Horizontal integration</td>
-            <td>There is horizontal integration with the micro-services of the Incubator DT. The DT is able to exchange information with other information systems over RabbitMQ.</td>
-        </tr>
+            <td>No horizontal integration with external systems. Standalone DT with synthetically generated inventory. No connection to external systems or other DTs.</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>19</sub></td>
+			<td class="characteristic-id">C<sub>19</sub></td>
             <td>Data ownership and privacy</td>
-            <td>Datasets have been provided online to the public. No privacy-related data are stored.</td>
-        </tr>
+            <td>Synthetic inventory data — no personal or sensitive information. Drying recipes and rules provided by La Doré industrial partner. MC model parameters informed by proprietary industrial data used within academic context only. No external data transmission.</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>20</sub></td>
+			<td class="characteristic-id">C<sub>20</sub></td>
             <td>Standardization</td>
-            <td>Communication is carried out using AMQP standard via RabbitMQ. Behavioral models have been produced following the FMI standard version 2.</td>
-        </tr>
+            <td>Communication via AMQP (RabbitMQ) and JSON payloads. Recipes and parameters follow La Doré industrial norms. No formal compliance with ISO 23247, AAS, or FMI/FMU.</td>
+		</tr>
         <tr>
-            <td class="characteristic-id">C<sub>21</sub></td>
+			<td class="characteristic-id">C<sub>21</sub></td>
             <td>Security and safety considerations</td>
-            <td>Communication can be TLS encrypted through the RabbitMQ broker. The physical controller counts with a safety consideration that turns off system if the temperature read is above 60°C or if the network connection is unstable.</td>
-        </tr>
+            <td>No physical safety risk — DT controls simulation only. Local deployment with no external network exposure. Basic isolation via Docker and RabbitMQ — no TLS, no authentication, no RBAC implemented. Industrial deployment would require TLS encryption, authenticated endpoints, and PLC-level safety interlocks.</td>
+		</tr>
     </table>
