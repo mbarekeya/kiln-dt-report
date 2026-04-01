@@ -1,6 +1,6 @@
-baseurl = "https://oakeslabmtl.github.io/DTDF/"
+baseURL = "https://mbarekeya.github.io/kiln-dt-report/"
 title = "Digital Twin Reporting Summary"
-author = "Kérian Fiter"
+author = "Eya Mbarek"
 canonifyurls = true
 languagecode = "en"
 theme = "my-theme"
