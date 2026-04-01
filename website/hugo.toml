@@ -1,0 +1,13 @@
+baseurl = "https://oakeslabmtl.github.io/DTDF/"
+title = "Digital Twin Reporting Summary"
+author = "Kérian Fiter"
+canonifyurls = true
+languagecode = "en"
+theme = "my-theme"
+
+pygmentsstyle       = "bw"
+pygmentscodefences  = true
+
+[params]
+  sitename = "Digital Twin Reporting Summary"
+  disableWebFonts = true
