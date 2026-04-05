@@ -1,31 +1,31 @@
 Services :
 	mc_estimation_service
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/TimeScaleThing/Service/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Service/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : mc_estimation_service
 		atStage : operation
-		enabledBy : simulator_enabler
+		enabledBy : rabbit_mq/simulator_enabler/docker
 		provides : mc_estimation_result
 	monitoring_service
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/TimeScaleThing/Service/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Service/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : monitoring_service
 		atStage : operation
-		enabledBy : simulator_enabler/chartjs/fastapi_enabler/godot_enabler
-		provides : post_drying_report/monitoring_dashboard
+		enabledBy : rabbit_mq/simulator_enabler/docker/chartjs/fastapi_enabler/godot_enabler
+		provides : stop_command/post_drying_report/start_command/monitoring_dashboard
 		HasVisualization : true
 	batch_loading_service
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/TimeScaleThing/Service/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Service/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : batch_loading_service
 		atStage : operation
-		enabledBy : scikit_learn_enabler/fastapi_enabler/pulp_enabler
-		provides : batch_scenario
+		enabledBy : scikit_learn_enabler/docker/fastapi_enabler/z3_enabler/pulp_enabler
+		provides : batch_scenario/formal_verification_result
 	intelligent_control_service
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/TimeScaleThing/Service/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Service/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : intelligent_control_service
 		atStage : operation
-		enabledBy : simulator_enabler/fastapi_enabler
+		enabledBy : rabbit_mq/simulator_enabler/docker/fastapi_enabler
 		provides : control_action/deviation_warning
 	visualization_3d_service
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/TimeScaleThing/Service/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Service/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : visualization_3d_service
 		atStage : operation
 		enabledBy : godot_enabler
@@ -33,226 +33,238 @@ Services :
 		HasVisualization : true
 Enablers :
 	scikit_learn_enabler
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/Enabler/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Enabler/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
 		sameAs : scikit_learn_enabler
 		desc : scikit-learn hierarchical Ward clustering for batch loading scenario D
 		enables : batch_loading_service
 		hasInput : ward_clustering_model/inventory_data
+	rabbit_mq
+		type : Thing/DTComponent/Enabler/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
+		sameAs : rabbit_mq
+		desc : RabbitMQ AMQP broker...
+		enables : mc_estimation_service/monitoring_service/intelligent_control_service
+		IsCommEnabler : true
 	simulator_enabler
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/Enabler/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Enabler/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
 		sameAs : simulator_enabler
-		desc : Python Simulator.py implementing the 7-phase drying cycle engine, MC decay model, and intelligent control loop
+		desc : Python Simulator.py implementing the 7-phase drying cycle engine, MC decay model, and intelligent control loop. Listens to wood.kiln.control for automatic Ts and damper adjustments. Adjustments active only during active drying phases (not during Heating or Equalization).
 		enables : mc_estimation_service/monitoring_service/intelligent_control_service
 		hasInput : sensor_data_streaming/recipe_model/drying_physics_model
+	docker
+		type : Thing/DTComponent/Enabler/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
+		sameAs : docker
+		desc : Docker Compose orchestrating...
+		enables : mc_estimation_service/monitoring_service/batch_loading_service/intelligent_control_service
 	chartjs
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/Enabler/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Enabler/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
 		sameAs : chartjs
-		desc : Chart.js frontend rendering real-time temperature and MC curves, phase progress bars, and KPI cards at port 8080
+		desc : Chart.js frontend rendering real-time temperature and MC curves, phase progress bars, damper aperture bar, Ts adjustment indicator, and KPI cards at port 8080
 		enables : monitoring_service
 	fastapi_enabler
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/Enabler/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Enabler/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
 		sameAs : fastapi_enabler
-		desc : Python FastAPI backend exposing REST endpoints for dashboard interaction, cycle control, and scenario management
+		desc : Python FastAPI backend exposing REST endpoints for dashboard interaction, cycle control, scenario management, and operator override of DT adjustments
 		enables : monitoring_service/batch_loading_service/intelligent_control_service
-		hasInput : sensor_data_streaming/recipe_model/history_data/inventory_data
+		hasInput : sensor_data_streaming/recipe_model/inventory_data/history_data
 	godot_enabler
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/Enabler/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Enabler/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
 		sameAs : godot_enabler
-		desc :  — 3D kiln visualization and operator UI for cycle initiation and batch validation
+		desc :  — 3D kiln visualization and operator UI for cycle initiation and batch validation; renders lumber lot color by MC, steam particle intensity by damper aperture, fan rotation and direction, and coil glow by Ts
 		enables : monitoring_service/visualization_3d_service
 		hasInput : sensor_data_streaming/kiln_3d_model
-	pulp_enabler
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/Enabler/NamedIndividual/ConceptInstance
-		sameAs : pulp_enabler
-		desc : PuLP/HiGHS ILP solver for batch loading scenarios A, B, and C
+	z3_enabler
+		type : Thing/DTComponent/Enabler/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
+		sameAs : z3_enabler
+		desc : Z3 SMT solver for formal verification of MILP batch solutions. Runs automatically in background after MILP computation. Verifies P1 (minimum batch count), P2 (optimal MC spread), and P3 (optimal duration spread) by refutation. Results logged to docker logs. Proved MILP optimal on P1 across all scenarios A-D.
 		enables : batch_loading_service
 		hasInput : inventory_data
-	docker
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/Enabler/NamedIndividual/ConceptInstance
-		sameAs : docker
-		desc : Docker Compose orchestrating Python backend and RabbitMQ containers for reproducible deployment
-	rabbit_mq
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/Enabler/NamedIndividual/ConceptInstance
-		sameAs : rabbit_mq
-		desc : RabbitMQ AMQP broker handling sensor streaming (wood.kiln.sensor), cycle start (wood.kiln.start), and intelligent control commands (wood.kiln.control)
-		IsCommEnabler : true
+	pulp_enabler
+		type : Thing/DTComponent/Enabler/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
+		sameAs : pulp_enabler
+		desc : PuLP/CBC single-phase MILP with combined weighted objective (1000*nb_loads + secondary_objective) for scenarios A (min loads), B (min loads then min MC spread), and C (min loads then min duration spread). Greedy fallback if MILP fails.
+		enables : batch_loading_service
+		hasInput : inventory_data
 Models :
 	ward_clustering_model
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/Model/ImplementationThing/DTComponent/Input/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Model/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/Input/NamedIndividual/ConceptInstance
 		sameAs : ward_clustering_model
 		inputTo : scikit_learn_enabler
 		desc : Hierarchical Ward clustering (scikit-learn) used for scenario D batch loading optimization
 	recipe_model
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/Model/ImplementationThing/DTComponent/Input/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Model/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/Input/NamedIndividual/ConceptInstance
 		sameAs : recipe_model
 		inputTo : simulator_enabler/fastapi_enabler
 		desc : R40 (EPN/PG, target 16%) and R44 (SAP, target 14%) drying recipes with 7 phases: Heating, Equalization, Auto Steaming 1-3, Fixed Steaming, and Cooling
 	kiln_3d_model
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/Model/ImplementationThing/DTComponent/Input/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Model/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/Input/NamedIndividual/ConceptInstance
 		sameAs : kiln_3d_model
 		inputTo : godot_enabler
-		desc : Godot 4.3 3D scene KilnScene with Package.tscn for lumber lots, rail nodes, fan, coils, door, and GPU particles for steam
+		desc : Godot 4.3 3D scene KilnScene with Package.tscn for lumber lots, rail nodes, fan, coils, door, and GPU particles for steam and damper ventilation
 	drying_physics_model
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/Model/ImplementationThing/DTComponent/Input/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Model/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/Input/NamedIndividual/ConceptInstance
 		sameAs : drying_physics_model
 		inputTo : simulator_enabler
 		desc : Exponential MC decay model: dMC/dt = -k*(MC-THE), with K_DRYING constants per species (EPN=0.08, PG=0.07, SAP=0.05)
 ProvidedThings :
 	mc_estimation_result
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/ConnectionComponent/TimeScaleThing/ProvidedThing/Insight/NamedIndividual/ConceptInstance
+		type : ConnectionComponent/Thing/Insight/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/ProvidedThing/NamedIndividual/ConceptInstance
 		sameAs : mc_estimation_result
 		desc : Real MC (exponential decay) and planned MC (linear reference) updated every 2 real seconds and displayed in dashboard charts and Godot UI
 		hasTimeScale : rt
 		providedBy : mc_estimation_service
 	stop_command
-		type : DescribedThing/Thing/ContainedElement/Action/Component/ImplementationThing/ConnectionComponent/TimeScaleThing/AutomaticEnabledThing/ProvidedThing/NamedIndividual/ConceptInstance
+		type : ConnectionComponent/Action/Thing/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/AutomaticEnabledThing/ProvidedThing/NamedIndividual/ConceptInstance
 		sameAs : stop_command
-		desc : Operator-triggered stop via dashboard POST /api/stop; publishes stopped status to wood.kiln.sensor; resets Godot UI to door-open state
+		desc : Operator-triggered stop via dashboard Stop Kiln button; publishes stopped status to wood.kiln.sensor; resets Godot UI to door-open state
 		IsAutomatic : false
 		hasTimeScale : rt
+		providedBy : monitoring_service
 	post_drying_report
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/ConnectionComponent/TimeScaleThing/ProvidedThing/Insight/NamedIndividual/ConceptInstance
+		type : ConnectionComponent/Thing/Insight/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/ProvidedThing/NamedIndividual/ConceptInstance
 		sameAs : post_drying_report
-		desc : HTML report generated at cycle completion summarizing start/end time, final MC, DTAB statistics, phase durations, and recommendations for the next cycle
+		desc : HTML report generated at cycle completion summarizing start/end time, final MC, duration deviation, Ts adjustment applied by DT, final damper opening, and recommendations
 		hasTimeScale : slower_trt
 		providedBy : monitoring_service
+	start_command
+		type : ConnectionComponent/Action/Thing/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/AutomaticEnabledThing/ProvidedThing/NamedIndividual/ConceptInstance
+		sameAs : start_command
+		desc : Operator-triggered kiln start via Godot UI after scenario validation; sends drying_group, width, initial_mc, total_pmp to wood.kiln.start
+		IsAutomatic : false
+		hasTimeScale : rt
+		providedBy : monitoring_service
 	monitoring_dashboard
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/ConnectionComponent/TimeScaleThing/ProvidedThing/Insight/NamedIndividual/ConceptInstance
+		type : ConnectionComponent/Thing/Insight/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/ProvidedThing/NamedIndividual/ConceptInstance
 		sameAs : monitoring_dashboard
-		desc : Web dashboard at port 8080 showing MC curves, temperature curves, phase progress, DTAB values, and deviation status
+		desc : Web dashboard at port 8080 showing MC curves, temperature curves, phase progress, DTAB values, deviation status, damper aperture bar, Ts auto-adjustment indicator, and DT control action messages
 		hasTimeScale : rt
 		providedBy : monitoring_service
 	batch_scenario
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/ConnectionComponent/TimeScaleThing/ProvidedThing/Insight/NamedIndividual/ConceptInstance
+		type : ConnectionComponent/Thing/Insight/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/ProvidedThing/NamedIndividual/ConceptInstance
 		sameAs : batch_scenario
-		desc : 4 batch loading scenarios (A: max filling, B: highest quality, C: optimal throughput, D: Ward clustering) with KPIs for operator selection
+		desc : 4 batch loading scenarios computed by MILP (A: max filling MC tol 20%, B: highest quality MC tol 7%, C: optimal throughput MC tol 15% dur tol 12h) and Ward clustering (D). Pre-computed at startup. Formally verified by Z3 for optimality on P1 (batch count), P2 (MC spread), P3 (duration spread).
 		hasTimeScale : slower_trt
 		providedBy : batch_loading_service
-	start_command
-		type : DescribedThing/Thing/ContainedElement/Action/Component/ImplementationThing/ConnectionComponent/TimeScaleThing/AutomaticEnabledThing/ProvidedThing/NamedIndividual/ConceptInstance
-		sameAs : start_command
-		desc : Operator-triggered kiln start via Godot UI or dashboard after scenario validation; sends drying_group, width, initial_mc, total_pmp to wood.kiln.start
-		IsAutomatic : false
-		hasTimeScale : rt
+	formal_verification_result
+		type : ConnectionComponent/Thing/Insight/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/ProvidedThing/NamedIndividual/ConceptInstance
+		sameAs : formal_verification_result
+		desc : Z3 formal verification results logged after MILP computation. Proves by refutation that no valid assignment exists with fewer batches (P1 proved optimal across all scenarios). Identifies residual suboptimality in MC spread (P2) for large groups under strict tolerance — a known NP-hard scalability limitation.
+		hasTimeScale : slower_trt
+		providedBy : batch_loading_service
 	control_action
-		type : DescribedThing/Thing/ContainedElement/Action/Component/ImplementationThing/ConnectionComponent/TimeScaleThing/AutomaticEnabledThing/ProvidedThing/NamedIndividual/ConceptInstance
+		type : ConnectionComponent/Action/Thing/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/AutomaticEnabledThing/ProvidedThing/NamedIndividual/ConceptInstance
 		sameAs : control_action
-		desc : Automatic DT control actions published to wood.kiln.control: Ts setpoint adjustment (+-2C) for SLOW_DRYING/FAST_DRYING, damper aperture adjustment for DTAB HIGH/LOW deviations
+		desc : Automatic DT control actions published to wood.kiln.control every 10 real seconds minimum: Ts setpoint adjustment (+-2C, max cumulative +-6C) for SLOW_DRYING/FAST_DRYING/EXTEND_CYCLE/CHECK_OVERDRYING; damper aperture adjustment (25% steps, 20% minimum during active drying) for DTAB HIGH/LOW. Actions restricted to active drying phases only — not during Heating or Equalization. Operator can reset all adjustments via dashboard override button.
 		IsAutomatic : true
 		hasTimeScale : rt
 		providedBy : intelligent_control_service
 	deviation_warning
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/ConnectionComponent/TimeScaleThing/ProvidedThing/Insight/NamedIndividual/ConceptInstance
+		type : ConnectionComponent/Thing/Insight/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/ProvidedThing/NamedIndividual/ConceptInstance
 		sameAs : deviation_warning
-		desc : Deviation status: ON_TARGET, SLOW_DRYING, FAST_DRYING, CHECK_OVERDRYING; DTAB alerts HIGH/LOW/NORMAL displayed on dashboard
+		desc : Deviation status: ON_TARGET, SLOW_DRYING, FAST_DRYING, EXTEND_CYCLE, CHECK_OVERDRYING; DTAB alerts HIGH (>25C) / LOW (<5C) / NORMAL displayed on dashboard with color coding
 		hasTimeScale : rt
 		providedBy : intelligent_control_service
 	real_time_viz
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/ConnectionComponent/TimeScaleThing/ProvidedThing/Insight/NamedIndividual/ConceptInstance
+		type : ConnectionComponent/Thing/Insight/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/ProvidedThing/NamedIndividual/ConceptInstance
 		sameAs : real_time_viz
-		desc : 3D visualization of kiln state: lumber color by MC, steam particle intensity, fan rotation and direction, coil light energy by Ts, door open/close
+		desc : 3D visualization of kiln state: lumber color by MC, steam particle intensity proportional to damper aperture percentage, fan rotation and direction reversal, coil light energy by Ts, door open/close animation
 		hasTimeScale : rt
 		providedBy : visualization_3d_service
-	phase_extension_recommendation
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/ConnectionComponent/TimeScaleThing/ProvidedThing/Insight/NamedIndividual/ConceptInstance
-		sameAs : phase_extension_recommendation
-		desc : Advisory recommendation to extend current drying phase when target MC has not been reached; operator confirms or rejects via dashboard
-		hasTimeScale : slower_trt
 Data transmitted :
 	sensor_data_trans
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/ConnectionComponent/TimeScaleThing/DataTransmitted/AutomaticEnabledThing/NamedIndividual/ConceptInstance
+		type : ConnectionComponent/Thing/DataTransmitted/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/AutomaticEnabledThing/NamedIndividual/ConceptInstance
 		sameAs : sensor_data_trans
-		desc : Published every 2 real seconds to RabbitMQ queue wood.kiln.sensor as JSON payload containing Ts, Th, derived RH, estimated MC, current phase, elapsed hours, fan speed, fan direction, and cycle status
+		desc : Published every 2 real seconds to RabbitMQ queue wood.kiln.sensor as JSON payload containing Ts, Th, derived RH, estimated MC, current phase, elapsed hours, fan speed, fan direction, damper aperture percentage, Ts adjustment, last control action, and cycle status
 		IsAutomatic : true
 		asData : sensor_data_streaming
 		hasTimeScale : rt
 		producedFrom : th_sensor/ts_sensor
 	phase_data_trans
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/ConnectionComponent/TimeScaleThing/DataTransmitted/AutomaticEnabledThing/NamedIndividual/ConceptInstance
+		type : ConnectionComponent/Thing/DataTransmitted/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/AutomaticEnabledThing/NamedIndividual/ConceptInstance
 		sameAs : phase_data_trans
 		desc : Current drying phase index and name, air velocity, fan direction, duration remaining, and progress percentage
 		IsAutomatic : true
+		asData : sensor_data_streaming
 		hasTimeScale : rt
 Sensors :
 	th_sensor
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/ConnectionComponent/TimeScaleThing/SensingComponent/NamedIndividual/ConceptInstance
+		type : ConnectionComponent/Thing/SensingComponent/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : th_sensor
 		desc : Wet-bulb temperature sensor (Th), used with Ts to compute relative humidity via psychrometric equations
 		producedData : sensor_data_trans
 	ts_sensor
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/ConnectionComponent/TimeScaleThing/SensingComponent/NamedIndividual/ConceptInstance
+		type : ConnectionComponent/Thing/SensingComponent/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : ts_sensor
 		desc : Dry-bulb temperature sensor (Ts), measures the air temperature inside the kiln chamber in degrees Celsius
 		producedData : sensor_data_trans
 System :
 	fan
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/ActingComponent/ConnectionComponent/TimeScaleThing/NamedIndividual/ConceptInstance
+		type : ActingComponent/ConnectionComponent/Thing/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : fan
 		desc : Circulates hot air throughout the kiln chamber; speed varies by drying phase and direction reverses every 2 simulated hours
 		isContainedIn : kiln
 	rail_2
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
+		type : Thing/DescribedThing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
 		sameAs : rail_2
 		desc : Second lumber rail, holds up to 16 lots of the same species and width
 		isContainedIn : kiln
 	door
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/ActingComponent/ConnectionComponent/TimeScaleThing/NamedIndividual/ConceptInstance
+		type : ActingComponent/ConnectionComponent/Thing/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : door
 		desc : Sliding door that closes at cycle start and opens manually by operator at cycle end
 		isContainedIn : kiln
 	heater_coils
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/ActingComponent/ConnectionComponent/TimeScaleThing/NamedIndividual/ConceptInstance
+		type : ActingComponent/ConnectionComponent/Thing/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : heater_coils
 		desc : Steam-fed heating coils that raise dry-bulb temperature progressively from ambient to target Ts across drying phases
 		isContainedIn : kiln
 	rail_1
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
+		type : Thing/DescribedThing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
 		sameAs : rail_1
 		desc : First lumber rail, holds up to 16 lots of the same species and width
 		isContainedIn : kiln
 	dampers
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/ActingComponent/ConnectionComponent/TimeScaleThing/NamedIndividual/ConceptInstance
+		type : ActingComponent/ConnectionComponent/Thing/DescribedThing/ContainedElement/Component/ImplementationThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : dampers
-		desc : Ventilation dampers that regulate the exchange of moist internal air with external air to control relative humidity inside the chamber
+		desc : Ventilation dampers with gradual aperture control (0-100% in steps of 25%). Minimum opening of 20% maintained during active drying phases to evacuate moisture. Fully closed during Heating and Equalization phases. Opened automatically by the DT when DTAB exceeds 25C; closed when DTAB falls below 5C.
 		isContainedIn : kiln
 System environnement :
 	lumber_inventory
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
+		type : Thing/DescribedThing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
 		sameAs : lumber_inventory
-		desc : Green lumber inventory stored outside the kiln awaiting drying; 70 lots generated by seed.py with species, width, length, and initial MC attributes; used by the DT for batch loading generation/optimization
+		desc : Green lumber inventory stored outside the kiln awaiting drying; 200 lots generated by seed.py with species (EPN, PG, SAP), width (4, 6, 8 inches), length, and initial MC attributes; used by the DT for batch loading generation and optimization
 		isContainedIn : drying_chamber
 	lumber_load
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
+		type : Thing/DescribedThing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
 		sameAs : lumber_load
 		desc : Lumber lots stacked on two rails inside the kiln; species EPN, PG, or SAP
 		isContainedIn : drying_chamber
 	external_air
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
+		type : Thing/DescribedThing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
 		sameAs : external_air
 		desc : Ambient air outside the kiln; influences thermal losses through the kiln walls but is not explicitly controlled
 		isContainedIn : drying_chamber
 	surrounding_air
-		type : DescribedThing/Thing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
+		type : Thing/DescribedThing/ContainedElement/Component/ImplementationThing/NamedIndividual/ConceptInstance
 		sameAs : surrounding_air
 		desc : Hot humid air circulated by the fan; properties determined by Ts, Th, and equilibrium moisture content
 		isContainedIn : drying_chamber
 Data :
 	sensor_data_streaming
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/Input/Data/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Data/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/Input/NamedIndividual/ConceptInstance
 		sameAs : sensor_data_streaming
 		inputTo : simulator_enabler/fastapi_enabler/godot_enabler
-		desc : Real-time sensor data published every 2s to wood.kiln.sensor: Ts, Th, derived RH, estimated MC, phase, elapsed hours, fan speed, fan direction, status
-		fromData : sensor_data_trans
+		desc : ...
+		fromData : sensor_data_trans/phase_data_trans
+	inventory_data
+		type : Thing/DTComponent/Data/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/Input/NamedIndividual/ConceptInstance
+		sameAs : inventory_data
+		inputTo : scikit_learn_enabler/fastapi_enabler/z3_enabler/pulp_enabler
+		desc : 200 lumber lots generated by seed.py with clustered MC distribution (center ± 8%) for realistic batch compatibility. Species EPN, PG, SAP; widths 4, 6, 8 inches.
 	history_data
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/Input/Data/NamedIndividual/ConceptInstance
+		type : Thing/DTComponent/Data/FidelityThing/DescribedThing/ContainedElement/Component/ImplementationThing/Input/NamedIndividual/ConceptInstance
 		sameAs : history_data
 		inputTo : fastapi_enabler
 		desc : In-memory history of up to 500 data points for dashboard chart reload and post-drying report generation
-	inventory_data
-		type : FidelityThing/DescribedThing/Thing/ContainedElement/Component/ImplementationThing/DTComponent/Input/Data/NamedIndividual/ConceptInstance
-		sameAs : inventory_data
-		inputTo : scikit_learn_enabler/fastapi_enabler/pulp_enabler
-		desc : 70 lumber lots generated by seed.py with species, width, length, and initial MC attributes
 Rabbit exchange :
 
 Rabbit route :
