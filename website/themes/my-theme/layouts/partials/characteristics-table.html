@@ -12,7 +12,7 @@
         <tr>
 			<td class="characteristic-id">C<sub>2</sub></td>
             <td>Physical acting components</td>
-            <td>fan: Circulates hot air throughout the kiln chamber; speed varies by drying phase and direction reverses every 2 simulated hours<br>door: Sliding door that closes at cycle start and opens manually by operator at cycle end<br>heater_coils: Steam-fed heating coils that raise dry-bulb temperature progressively from ambient to target Ts across drying phases<br>dampers: Ventilation dampers with gradual aperture control (0-100% in steps of 25%). Minimum opening of 20% maintained during active drying phases to evacuate moisture. Fully closed during Heating and Equalization phases. Opened automatically by the DT when DTAB exceeds 25C; closed when DTAB falls below 5C.</td>
+            <td>dampers: Ventilation dampers with gradual aperture control (0-100% in steps of 25%). Minimum opening of 20% maintained during active drying phases to evacuate moisture. Fully closed during Heating and Equalization phases. Opened automatically by the DT when DTAB exceeds 25C; closed when DTAB falls below 5C.<br>door: Sliding door that closes at cycle start and opens manually by operator at cycle end<br>fan: Circulates hot air throughout the kiln chamber; speed varies by drying phase and direction reverses every 2 simulated hours<br>heater_coils: Steam-fed heating coils that raise dry-bulb temperature progressively from ambient to target Ts across drying phases</td>
 		</tr>
         <tr>
 			<td class="characteristic-id">C<sub>3</sub></td>
@@ -22,7 +22,7 @@
         <tr>
 			<td class="characteristic-id">C<sub>4</sub></td>
             <td>Physical-to-virtual interaction</td>
-            <td>sensor_data_trans: Published every 2 real seconds to RabbitMQ queue wood.kiln.sensor as JSON payload containing Ts, Th, derived RH, estimated MC, current phase, elapsed hours, fan speed, fan direction, damper aperture percentage, Ts adjustment, last control action, and cycle status<br>phase_data_trans: Current drying phase index and name, air velocity, fan direction, duration remaining, and progress percentage</td>
+            <td>phase_data_trans: Current drying phase index and name, air velocity, fan direction, duration remaining, and progress percentage<br>sensor_data_trans: Published every 2 real seconds to RabbitMQ queue wood.kiln.sensor as JSON payload containing Ts, Th, derived RH, estimated MC, current phase, elapsed hours, fan speed, fan direction, damper aperture percentage, Ts adjustment, last control action, and cycle status</td>
 		</tr>
         <tr>
 			<td class="characteristic-id">C<sub>5</sub></td>
@@ -32,12 +32,12 @@
         <tr>
 			<td class="characteristic-id">C<sub>6</sub></td>
             <td>DT services</td>
-            <td>mc_estimation_service<br>monitoring_service<br>batch_loading_service<br>intelligent_control_service<br>visualization_3d_service</td>
+            <td>batch_loading_service<br>monitoring_service<br>intelligent_control_service<br>mc_estimation_service<br>visualization_3d_service</td>
 		</tr>
         <tr>
 			<td class="characteristic-id">C<sub>7</sub></td>
             <td>Twinning time-scale</td>
-            <td>Real-time<br>Slower than real-time<br>Sensor data published every 2 real seconds regardless of TIME_SCALE. Real-time: dashboard and Godot visualization. Slower-than-RT: deviation detection, intelligent control (min 10s interval), and Z3 formal verification. Faster-than-RT: TIME_SCALE adjustable from 1x to 600x via dashboard slider.<br>Faster than real-time</td>
+            <td>Slower than real-time<br>Real-time<br>Sensor data published every 2 real seconds regardless of TIME_SCALE. Near Real-time: dashboard and Godot visualization. Slower-than-RT: deviation detection, intelligent control (min 10s interval), and Z3 formal verification. Faster-than-RT: TIME_SCALE adjustable from 1x to 600x via dashboard slider.<br>Faster than real-time</td>
 		</tr>
         <tr>
 			<td class="characteristic-id">C<sub>8</sub></td>
@@ -47,17 +47,17 @@
         <tr>
 			<td class="characteristic-id">C<sub>9</sub></td>
             <td>Life-cycle stages</td>
-            <td>Supports the service phase only: execute (batch validation and real-time monitoring), analyse (deviation detection and Z3 formal verification), evolve (automatic Ts and damper adjustment during active drying phases), save (sensor history and post-drying report), and terminate (cycle completion or forced stop). No creation phase — DT infrastructure permanently deployed.</td>
+            <td>Supports the service phase only: execute (batch validation and real-time monitoring), analyse (deviation detection and Z3 formal verification), evolve (automatic Ts and damper adjustment during active drying phases), save (sensor history and post-drying report), and terminate (cycle completion or forced stop). DT represents the kiln as-operated.</td>
 		</tr>
         <tr>
 			<td class="characteristic-id">C<sub>10</sub></td>
             <td>DT models and data</td>
-            <td>Model:<br>ward_clustering_model: Hierarchical Ward clustering (scikit-learn) used for scenario D batch loading optimization<br>recipe_model: R40 (EPN/PG, target 16%) and R44 (SAP, target 14%) drying recipes with 7 phases: Heating, Equalization, Auto Steaming 1-3, Fixed Steaming, and Cooling<br>kiln_3d_model: Godot 4.3 3D scene KilnScene with Package.tscn for lumber lots, rail nodes, fan, coils, door, and GPU particles for steam and damper ventilation<br>drying_physics_model: Exponential MC decay model: dMC/dt = -k*(MC-THE), with K_DRYING constants per species (EPN=0.08, PG=0.07, SAP=0.05)<br><br>Data:<br>sensor_data_streaming: ...<br>inventory_data: 200 lumber lots generated by seed.py with clustered MC distribution (center ± 8%) for realistic batch compatibility. Species EPN, PG, SAP; widths 4, 6, 8 inches.<br>history_data: In-memory history of up to 500 data points for dashboard chart reload and post-drying report generation</td>
+            <td>Model:<br>drying_physics_model: Exponential MC decay model: dMC/dt = -k*(MC-THE), with K_DRYING constants per species<br>kiln_3d_model: Godot 4.3 3D scene KilnScene with Package.tscn for lumber lots, rail nodes, fan, coils, door, and GPU particles for steam and damper ventilation<br>recipe_data: R40 (EPN/PG, target 16%) and R44 (SAP, target 14%) drying recipes with 7 phases<br>ward_clustering_model: Hierarchical Ward clustering (scikit-learn) used for scenario D batch loading optimization<br><br>Data:<br>inventory_data: 200 lumber lots generated by seed.py with clustered MC distribution (center ± 8%) for realistic batch compatibility. Species EPN, PG, SAP; widths 4, 6, 8 inches.<br>sensor_data_streaming: ...</td>
 		</tr>
         <tr>
 			<td class="characteristic-id">C<sub>11</sub></td>
             <td>Tooling and enablers</td>
-            <td>scikit_learn_enabler: scikit-learn hierarchical Ward clustering for batch loading scenario D<br>rabbit_mq: RabbitMQ AMQP broker...<br>simulator_enabler: Python Simulator.py implementing the 7-phase drying cycle engine, MC decay model, and intelligent control loop. Listens to wood.kiln.control for automatic Ts and damper adjustments. Adjustments active only during active drying phases (not during Heating or Equalization).<br>docker: Docker Compose orchestrating...<br>chartjs: Chart.js frontend rendering real-time temperature and MC curves, phase progress bars, damper aperture bar, Ts adjustment indicator, and KPI cards at port 8080<br>fastapi_enabler: Python FastAPI backend exposing REST endpoints for dashboard interaction, cycle control, scenario management, and operator override of DT adjustments<br>godot_enabler:  — 3D kiln visualization and operator UI for cycle initiation and batch validation; renders lumber lot color by MC, steam particle intensity by damper aperture, fan rotation and direction, and coil glow by Ts<br>z3_enabler: Z3 SMT solver for formal verification of MILP batch solutions. Runs automatically in background after MILP computation. Verifies P1 (minimum batch count), P2 (optimal MC spread), and P3 (optimal duration spread) by refutation. Results logged to docker logs. Proved MILP optimal on P1 across all scenarios A-D.<br>pulp_enabler: PuLP/CBC single-phase MILP with combined weighted objective (1000*nb_loads + secondary_objective) for scenarios A (min loads), B (min loads then min MC spread), and C (min loads then min duration spread). Greedy fallback if MILP fails.</td>
+            <td>chartjs: Chart.js frontend rendering real-time temperature and MC curves, phase progress bars, damper aperture bar, Ts adjustment indicator, and KPI cards at port 8080<br>docker: Docker Compose orchestrating...<br>simulator: Python Simulator.py implementing the 7-phase drying cycle engine, MC decay model, and intelligent control loop. Listens to wood.kiln.control for automatic Ts and damper adjustments. Adjustments active only during active drying phases (not during Heating or Equalization).<br>fastapi: Python FastAPI backend exposing REST endpoints for dashboard interaction, cycle control, scenario management, and operator override of DT adjustments<br>godot: : 3D kiln visualization and operator UI for cycle initiation and batch loading, steam particles intensity by damper aperture, fan rotation and direction, and coil glow by Ts<br>pulp: PuLP/CBC single-phase MILP with combined weighted objective (1000*nb_loads + secondary_objective) for scenarios A (min loads), B (min loads then min MC spread), and C (min loads then min duration spread). Greedy fallback if MILP fails.<br>scikit_learn: scikit-learn hierarchical Ward clustering for batch loading scenario D<br>z3: Z3 SMT solver for formal verification of MILP batch solutions. Runs automatically in background after MILP computation. Verifies P1 (minimum batch count), P2 (optimal MC spread), and P3 (optimal duration spread) by refutation. Results logged to docker logs.<br>rabbit_mq: RabbitMQ AMQP broker...</td>
 		</tr>
         <tr>
 			<td class="characteristic-id">C<sub>12</sub></td>
@@ -67,7 +67,7 @@
         <tr>
 			<td class="characteristic-id">C<sub>13</sub></td>
             <td>Twinning process and DT evolution</td>
-            <td>Engineered following a POC-first approach for doctoral research (LOG6310E, Polytechnique Montreal). 6 milestones: M1 simulator + RabbitMQ, M2 FastAPI dashboard, M3 Godot 3D scene, M4 batch optimization (MILP single-phase + Ward + Z3 formal verification), M5 deviation detection and recommendations, M6 intelligent control layer (Ts + dampers, active phases only). M1-M5: Digital Shadow. M6: full Digital Twin.</td>
+            <td>Engineered following a POC-first approach for the course LOG6310E. 6 milestones: M1 simulator + RabbitMQ + Docker, M2 batch loading optimization (Greedy than MILP single-phase + Ward + Z3 formal verification), M3 Godot 3D visualization, M4 MC estimation + FastAPI dashboard, M5 deviation detection and recommendations, M6 intelligent control layer (Ts + dampers, active phases only). M1-M5: Digital Shadow. M6: full Digital Twin.</td>
 		</tr>
         <tr>
 			<td class="characteristic-id">C<sub>14</sub></td>
@@ -77,17 +77,17 @@
         <tr>
 			<td class="characteristic-id">C<sub>15</sub></td>
             <td>DT technical connection</td>
-            <td>AMQP via RabbitMQ (port 5672): sensor streaming, cycle start, and intelligent control commands. HTTP REST via FastAPI (port 8080): dashboard interaction and cycle control. All communication on localhost and Docker internal network. No physical kiln connection — PT emulated by simulator.</td>
+            <td>AMQP via RabbitMQ (port 5672): sensor streaming, cycle start, and intelligent control commands. HTTP REST via FastAPI (port 8080): dashboard interaction and cycle control. All communication on localhost and Docker internal network. No physical kiln connection, PT emulated by simulator.</td>
 		</tr>
         <tr>
 			<td class="characteristic-id">C<sub>16</sub></td>
             <td>DT hosting/deployment</td>
-            <td> on Windows host; web dashboard at port 8080. Platform-independent — portable to Linux or cloud.</td>
+            <td>Deployed locally via Docker Compose.</td>
 		</tr>
         <tr>
 			<td class="characteristic-id">C<sub>17</sub></td>
             <td>Insights and decision making</td>
-            <td>mc_estimation_result: Real MC (exponential decay) and planned MC (linear reference) updated every 2 real seconds and displayed in dashboard charts and Godot UI<br>stop_command: Operator-triggered stop via dashboard Stop Kiln button; publishes stopped status to wood.kiln.sensor; resets Godot UI to door-open state<br>post_drying_report: HTML report generated at cycle completion summarizing start/end time, final MC, duration deviation, Ts adjustment applied by DT, final damper opening, and recommendations<br>start_command: Operator-triggered kiln start via Godot UI after scenario validation; sends drying_group, width, initial_mc, total_pmp to wood.kiln.start<br>monitoring_dashboard: Web dashboard at port 8080 showing MC curves, temperature curves, phase progress, DTAB values, deviation status, damper aperture bar, Ts auto-adjustment indicator, and DT control action messages<br>batch_scenario: 4 batch loading scenarios computed by MILP (A: max filling MC tol 20%, B: highest quality MC tol 7%, C: optimal throughput MC tol 15% dur tol 12h) and Ward clustering (D). Pre-computed at startup. Formally verified by Z3 for optimality on P1 (batch count), P2 (MC spread), P3 (duration spread).<br>formal_verification_result: Z3 formal verification results logged after MILP computation. Proves by refutation that no valid assignment exists with fewer batches (P1 proved optimal across all scenarios). Identifies residual suboptimality in MC spread (P2) for large groups under strict tolerance — a known NP-hard scalability limitation.<br>control_action: Automatic DT control actions published to wood.kiln.control every 10 real seconds minimum: Ts setpoint adjustment (+-2C, max cumulative +-6C) for SLOW_DRYING/FAST_DRYING/EXTEND_CYCLE/CHECK_OVERDRYING; damper aperture adjustment (25% steps, 20% minimum during active drying) for DTAB HIGH/LOW. Actions restricted to active drying phases only — not during Heating or Equalization. Operator can reset all adjustments via dashboard override button.<br>deviation_warning: Deviation status: ON_TARGET, SLOW_DRYING, FAST_DRYING, EXTEND_CYCLE, CHECK_OVERDRYING; DTAB alerts HIGH (>25C) / LOW (<5C) / NORMAL displayed on dashboard with color coding<br>real_time_viz: 3D visualization of kiln state: lumber color by MC, steam particle intensity proportional to damper aperture percentage, fan rotation and direction reversal, coil light energy by Ts, door open/close animation</td>
+            <td>batch_scenario: 4 batch loading scenarios computed by MILP and Ward clustering. Formally verified by Z3 for optimality on P1 (batch count), P2 (MC spread), P3 (duration spread).<br>formal_verification_result: Z3 formal verification results logged after MILP computation. Proves by refutation that no valid assignment exists with fewer batches (P1 proved optimal across all scenarios). Identifies residual suboptimality in MC spread (P2) for large groups under strict tolerance — a known NP-hard scalability limitation.<br>control_action: Automatic DT control actions published to wood.kiln.control every 10 real seconds minimum: Ts setpoint adjustment (+-2C, max cumulative +-6C) for SLOW_DRYING/FAST_DRYING/EXTEND_CYCLE/CHECK_OVERDRYING; damper aperture adjustment (25% steps, 20% minimum during active drying) for DTAB HIGH/LOW. Actions restricted to active drying phases only — not during Heating or Equalization. Operator can reset all adjustments via dashboard override button.<br>deviation_warning: Deviation status: ON_TARGET, SLOW_DRYING, FAST_DRYING, EXTEND_CYCLE, CHECK_OVERDRYING; DTAB alerts HIGH (>25C) / LOW (<5C) / NORMAL displayed on dashboard with color coding<br>mc_estimation_result: Real MC (exponential decay) and planned MC (linear reference) updated every 2 real seconds and displayed in dashboard charts and Godot UI<br>monitoring_dashboard: Web dashboard at port 8080 showing MC curves, temperature curves, phase progress, DTAB values, deviation status, damper aperture bar, Ts auto-adjustment indicator, and DT control action messages<br>post_drying_report: HTML report generated at cycle completion summarizing start/end time, final MC, duration deviation, Ts adjustment applied by DT, final damper opening, and recommendations<br>start_command: Operator-triggered kiln start via Godot UI after scenario validation; sends drying_group, width, initial_mc, total_pmp to wood.kiln.start<br>stop_command: Operator-triggered stop via dashboard Stop Kiln button; publishes stopped status to wood.kiln.sensor; resets Godot UI to door-open state<br>real_time_viz: 3D visualization of kiln state: steam particle intensity proportional to damper aperture percentage, fan rotation and direction reversal, coil light energy by Ts, door open/close animation</td>
 		</tr>
         <tr>
 			<td class="characteristic-id">C<sub>18</sub></td>
@@ -97,16 +97,16 @@
         <tr>
 			<td class="characteristic-id">C<sub>19</sub></td>
             <td>Data ownership and privacy</td>
-            <td>Synthetic inventory data — no personal or sensitive information. Drying recipes and rules provided by La Doré industrial partner. MC model parameters informed by proprietary industrial data used within academic context only. No external data transmission.</td>
+            <td>Synthetic inventory data: no personal or sensitive information. Drying recipes and rules provided by La Doré industrial partner. MC model parameters informed by proprietary industrial data used within academic context only. No external data transmission.</td>
 		</tr>
         <tr>
 			<td class="characteristic-id">C<sub>20</sub></td>
             <td>Standardization</td>
-            <td>Communication via AMQP (RabbitMQ) and JSON payloads. Recipes and parameters follow La Doré industrial norms. Formal verification via Z3 SMT solver (SMT-LIB standard). No formal compliance with ISO 23247, AAS, or FMI/FMU.</td>
+            <td>Communication via AMQP (RabbitMQ) and JSON payloads. Recipes and parameters follow La Doré industrial norms. Formal verification via Z3 SMT solver (SMT-LIB standard). Aligned with ISO 23247 </td>
 		</tr>
         <tr>
 			<td class="characteristic-id">C<sub>21</sub></td>
             <td>Security and safety considerations</td>
-            <td>No physical safety risk — DT controls simulation only. Automatic control actions bounded: Ts adjustment capped at +-6C cumulative, dampers never below 20% during active drying. Local deployment with no external network exposure. No TLS, no authentication, no RBAC implemented in POC.</td>
+            <td>No physical safety risk: DT controls simulation only. Automatic control actions bounded: Ts adjustment capped at +-6C cumulative, dampers never below 20% during active drying. Local deployment with no external network exposure.</td>
 		</tr>
     </table>
