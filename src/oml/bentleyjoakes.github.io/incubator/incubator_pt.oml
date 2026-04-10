@@ -8,7 +8,7 @@ description <https://bentleyjoakes.github.io/incubator/incubator_pt#> as incubat
 	    DTDFVocab:hasSystem kiln
 	    DTDFVocab:hasAgent operator
 	    DTDFVocab:hasEnvironment drying_chamber
-	    base:desc "An industrial wood drying kiln located at La Doré, Quebec, containing two rail systems for lumber loading, a reversible fan, steam heating coils, ventilation dampers, and sensors for temperature and humidity monitoring."
+	    base:desc "An industrial wood drying kiln, containing two rail systems for lumber loading, a reversible fan, steam heating coils, ventilation dampers, and sensors for temperature and humidity monitoring."
 	]
 
 	instance kiln : DTDFVocab:System [

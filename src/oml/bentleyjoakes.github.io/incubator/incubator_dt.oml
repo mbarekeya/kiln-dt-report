@@ -6,7 +6,7 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 	extends <https://bentleyjoakes.github.io/incubator/incubator_pt#> as pt
 
 	instance KilnDT : DTDFVocab:DigitalTwin [
-	    DTDFVocab:purpose "enhance the operation of the industrial wood drying kiln through real-time monitoring, MC estimation, deviation detection and intelligent control, batch loading optimization with formal verification, and 3D visualization"
+	    DTDFVocab:purpose "enhance the operation of the industrial wood drying kiln through near real-time monitoring, MC estimation, deviation detection and intelligent control, batch loading optimization with formal verification, and 3D visualization"
 	    DTDFVocab:multiplicity 1
 	]
 
@@ -202,7 +202,7 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 
 	// C9: LifeCycleStage
 	instance life_cycle_stage : DTDFVocab:LifeCycleStage [
-	    base:desc "Supports the service phase only: execute (batch validation and real-time monitoring), analyse (deviation detection and Z3 formal verification), evolve (automatic Ts and damper adjustment during active drying phases), save (sensor history and post-drying report), and terminate (cycle completion or forced stop). DT represents the kiln as-operated."
+	    base:desc "Supports the service phase only: execute (batch validation and near real-time monitoring), analyse (deviation detection and Z3 formal verification), evolve (automatic Ts and damper adjustment during active drying phases), save (sensor history and post-drying report), and terminate (cycle completion or forced stop). DT represents the kiln as-operated."
 	]
 
 	// C12: Constellation
