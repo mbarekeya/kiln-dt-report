@@ -1,81 +1,252 @@
-description <https://bentleyjoakes.github.io/incubator/incubator_pt#> as incubator_pt {
-
+description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubator_dt {
+	
 	uses <https://bentleyjoakes.github.io/DTDF/vocab/DTDFVocab#> as DTDFVocab
 	uses <https://bentleyjoakes.github.io/DTDF/vocab/base#> as base
 	extends <https://bentleyjoakes.github.io/DTDF/desc/baseDesc#> as baseDesc
+	extends <https://bentleyjoakes.github.io/incubator/incubator_pt#> as pt
 
-	instance pt : DTDFVocab:SystemUnderStudy [
-	    DTDFVocab:hasSystem kiln
-	    DTDFVocab:hasAgent operator
-	    DTDFVocab:hasEnvironment drying_chamber
-	    base:desc "An industrial wood drying kiln located at La Doré, Quebec, containing two rail systems for lumber loading, a reversible fan, steam heating coils, ventilation dampers, and sensors for temperature and humidity monitoring."
-	]
-
-	instance kiln : DTDFVocab:System [
-	    DTDFVocab:purpose "dry lumber to a target moisture content using controlled temperature and humidity phases"
+	instance KilnDT : DTDFVocab:DigitalTwin [
+	    DTDFVocab:purpose "enhance the operation of the industrial wood drying kiln through real-time monitoring, MC estimation, deviation detection and intelligent control, batch loading optimization with formal verification, and 3D visualization"
 	    DTDFVocab:multiplicity 1
-	    base:contains fan, heater_coils, door, dampers, rail_1, rail_2
-	]
-	instance rail_1 : DTDFVocab:Component [
-	    base:desc "First lumber rail, holds up to 16 lots of the same species and width"
-	]
-	instance rail_2 : DTDFVocab:Component [
-	    base:desc "Second lumber rail, holds up to 16 lots of the same species and width"
 	]
 
-	instance fan : DTDFVocab:ActingComponent [
-		base:desc "Circulates hot air throughout the kiln chamber; speed varies by drying phase and direction reverses every 2 simulated hours"
-	]
-	instance heater_coils : DTDFVocab:ActingComponent [
-		base:desc "Steam-fed heating coils that raise dry-bulb temperature progressively from ambient to target Ts across drying phases"
-	]
-	instance door : DTDFVocab:ActingComponent [
-		base:desc "Sliding door that closes at cycle start and opens manually by operator at cycle end"
-	]
-	instance dampers : DTDFVocab:ActingComponent [
-	    base:desc "Ventilation dampers with gradual aperture control (0-100% in steps of 25%). Minimum opening of 20% maintained during active drying phases to evacuate moisture. Fully closed during Heating and Equalization phases. Opened automatically by the DT when DTAB exceeds 25C; closed when DTAB falls below 5C."
-	]
+	// SERVICES (C6)
 
-	instance ts_sensor : DTDFVocab:SensingComponent [
-		base:desc "Dry-bulb temperature sensor (Ts), measures the air temperature inside the kiln chamber in degrees Celsius"
+	instance visualization_3d_service : DTDFVocab:Service [
+		DTDFVocab:provides real_time_viz
+		DTDFVocab:atStage baseDesc:operation
+		DTDFVocab:HasVisualization true
 	]
-	instance th_sensor : DTDFVocab:SensingComponent [
-		base:desc "Wet-bulb temperature sensor (Th), used with Ts to compute relative humidity via psychrometric equations"
+	instance mc_estimation_service : DTDFVocab:Service [
+		DTDFVocab:provides mc_estimation_result
+		DTDFVocab:atStage baseDesc:operation
 	]
-
-	instance sensor_data_trans : DTDFVocab:DataTransmitted [
-	    DTDFVocab:producedFrom ts_sensor, th_sensor
-	    DTDFVocab:hasTimeScale baseDesc:rt
-	    DTDFVocab:IsAutomatic true
-	    base:desc "Published every 2 real seconds to RabbitMQ queue wood.kiln.sensor as JSON payload containing Ts, Th, derived RH, estimated MC, current phase, elapsed hours, fan speed, fan direction, damper aperture percentage, Ts adjustment, last control action, and cycle status"
+	instance monitoring_service : DTDFVocab:Service [
+	    DTDFVocab:provides monitoring_dashboard
+	    DTDFVocab:provides post_drying_report
+	    DTDFVocab:provides stop_command    
+	    DTDFVocab:provides start_command     
+	    DTDFVocab:atStage baseDesc:operation
+	    DTDFVocab:HasVisualization true
 	]
 	
-	instance phase_data_trans : DTDFVocab:DataTransmitted [
+	instance intelligent_control_service : DTDFVocab:Service [
+	    DTDFVocab:provides deviation_warning
+	    DTDFVocab:provides control_action    
+	    DTDFVocab:atStage baseDesc:operation
+	]
+	instance batch_loading_service : DTDFVocab:Service [
+		DTDFVocab:provides batch_scenario
+		DTDFVocab:provides formal_verification_result
+		DTDFVocab:atStage baseDesc:operation
+	]
+
+	// ENABLERS (C11)
+	instance rabbit_mq : DTDFVocab:Enabler [
+	    DTDFVocab:IsCommEnabler true
+	    DTDFVocab:enables monitoring_service
+	    DTDFVocab:enables intelligent_control_service
+	    DTDFVocab:enables mc_estimation_service
+	    base:desc "RabbitMQ AMQP broker..."
+	]
+	
+	instance docker : DTDFVocab:Enabler [
+	    DTDFVocab:enables monitoring_service
+	    DTDFVocab:enables batch_loading_service
+	    DTDFVocab:enables mc_estimation_service
+	    DTDFVocab:enables intelligent_control_service
+	    base:desc "Docker Compose orchestrating..."
+	]
+
+	instance godot : DTDFVocab:Enabler [
+	    DTDFVocab:enables visualization_3d_service
+	    DTDFVocab:enables monitoring_service
+	    base:desc "Godot 4.3 C#: 3D kiln visualization and operator UI for cycle initiation and batch loading, steam particles intensity by damper aperture, fan rotation and direction, and coil glow by Ts"
+	]
+	
+	instance fastapi : DTDFVocab:Enabler [
+	    DTDFVocab:enables monitoring_service
+	    DTDFVocab:enables batch_loading_service
+	    DTDFVocab:enables intelligent_control_service
+	    base:desc "Python FastAPI backend exposing REST endpoints for dashboard interaction, cycle control, scenario management, and operator override of DT adjustments"
+	]
+	
+	instance simulator : DTDFVocab:Enabler [
+	    DTDFVocab:enables mc_estimation_service
+	    DTDFVocab:enables intelligent_control_service
+	    DTDFVocab:enables monitoring_service
+	    base:desc "Python Simulator.py implementing the 7-phase drying cycle engine, MC decay model, and intelligent control loop. Listens to wood.kiln.control for automatic Ts and damper adjustments. Adjustments active only during active drying phases (not during Heating or Equalization)."
+	]
+	
+	instance pulp : DTDFVocab:Enabler [
+	    DTDFVocab:enables batch_loading_service
+	    base:desc "PuLP/CBC single-phase MILP with combined weighted objective (1000*nb_loads + secondary_objective) for scenarios A (min loads), B (min loads then min MC spread), and C (min loads then min duration spread). Greedy fallback if MILP fails."
+	]
+	
+	instance z3 : DTDFVocab:Enabler [
+	    DTDFVocab:enables batch_loading_service
+	    base:desc "Z3 SMT solver for formal verification of MILP batch solutions. Runs automatically in background after MILP computation. Verifies P1 (minimum batch count), P2 (optimal MC spread), and P3 (optimal duration spread) by refutation. Results logged to docker logs."
+	]
+	
+	instance scikit_learn : DTDFVocab:Enabler [
+	    DTDFVocab:enables batch_loading_service
+	    base:desc "scikit-learn hierarchical Ward clustering for batch loading scenario D"
+	]
+	
+	
+	instance chartjs : DTDFVocab:Enabler [
+	    DTDFVocab:enables monitoring_service
+	    base:desc "Chart.js frontend rendering real-time temperature and MC curves, phase progress bars, damper aperture bar, Ts adjustment indicator, and KPI cards at port 8080"
+	]
+	
+
+	// MODELS / DATA
+
+	instance drying_physics_model : DTDFVocab:Model [
+	    DTDFVocab:inputTo simulator
+	    base:desc "Exponential MC decay model: dMC/dt = -k*(MC-THE), with K_DRYING constants per species"
+	]
+	instance recipe_data : DTDFVocab:Model [
+	    DTDFVocab:inputTo simulator
+	    DTDFVocab:inputTo fastapi
+	    base:desc "R40 (EPN/PG, target 16%) and R44 (SAP, target 14%) drying recipes with 7 phases"
+	]
+	instance kiln_3d_model : DTDFVocab:Model [
+	    DTDFVocab:inputTo godot
+	    base:desc "Godot 4.3 3D scene KilnScene with Package.tscn for lumber lots, rail nodes, fan, coils, door, and GPU particles for steam and damper ventilation"
+	]
+	instance inventory_data : DTDFVocab:Data [
+	    DTDFVocab:inputTo fastapi
+	    DTDFVocab:inputTo scikit_learn
+	    DTDFVocab:inputTo pulp
+	    DTDFVocab:inputTo z3
+	    base:desc "200 lumber lots generated by seed.py with clustered MC distribution (center ± 8%) for realistic batch compatibility. Species EPN, PG, SAP; widths 4, 6, 8 inches."
+	]
+	instance sensor_data_streaming : DTDFVocab:Data [
+	    DTDFVocab:inputTo simulator
+	    DTDFVocab:inputTo godot
+	    DTDFVocab:inputTo fastapi
+	    DTDFVocab:fromData pt:sensor_data_trans
+	    DTDFVocab:fromData pt:phase_data_trans
+	    base:desc "..."
+	]
+
+	instance ward_clustering_model : DTDFVocab:Model [
+	    DTDFVocab:inputTo scikit_learn
+	    base:desc "Hierarchical Ward clustering (scikit-learn) used for scenario D batch loading optimization"
+	]
+
+	// INSIGHTS / ACTIONS (C17)
+
+	instance real_time_viz : DTDFVocab:Insight [
 	    DTDFVocab:hasTimeScale baseDesc:rt
+	    base:desc "3D visualization of kiln state: steam particle intensity proportional to damper aperture percentage, fan rotation and direction reversal, coil light energy by Ts, door open/close animation"
+	]
+	instance mc_estimation_result : DTDFVocab:Insight [
+	    DTDFVocab:hasTimeScale baseDesc:rt
+	    base:desc "Real MC (exponential decay) and planned MC (linear reference) updated every 2 real seconds and displayed in dashboard charts and Godot UI"
+	]
+	instance deviation_warning : DTDFVocab:Insight [
+	    DTDFVocab:hasTimeScale baseDesc:rt
+	    base:desc "Deviation status: ON_TARGET, SLOW_DRYING, FAST_DRYING, EXTEND_CYCLE, CHECK_OVERDRYING; DTAB alerts HIGH (>25C) / LOW (<5C) / NORMAL displayed on dashboard with color coding"
+	]
+
+	instance monitoring_dashboard : DTDFVocab:Insight [
+	    DTDFVocab:hasTimeScale baseDesc:rt
+	    base:desc "Web dashboard at port 8080 showing MC curves, temperature curves, phase progress, DTAB values, deviation status, damper aperture bar, Ts auto-adjustment indicator, and DT control action messages"
+	]
+	instance post_drying_report : DTDFVocab:Insight [
+	    DTDFVocab:hasTimeScale baseDesc:slower_trt
+	    base:desc "HTML report generated at cycle completion summarizing start/end time, final MC, duration deviation, Ts adjustment applied by DT, final damper opening, and recommendations"
+	]
+	instance batch_scenario : DTDFVocab:Insight [
+	    DTDFVocab:hasTimeScale baseDesc:slower_trt
+	    base:desc "4 batch loading scenarios computed by MILP and Ward clustering. Formally verified by Z3 for optimality on P1 (batch count), P2 (MC spread), P3 (duration spread)."
+	]
+	instance formal_verification_result : DTDFVocab:Insight [
+	    DTDFVocab:hasTimeScale baseDesc:slower_trt
+	    base:desc "Z3 formal verification results logged after MILP computation. Proves by refutation that no valid assignment exists with fewer batches (P1 proved optimal across all scenarios). Identifies residual suboptimality in MC spread (P2) for large groups under strict tolerance — a known NP-hard scalability limitation."
+	]
+	instance start_command : DTDFVocab:Action [
+	    DTDFVocab:IsAutomatic false
+	    DTDFVocab:hasTimeScale baseDesc:rt
+	    base:desc "Operator-triggered kiln start via Godot UI after scenario validation; sends drying_group, width, initial_mc, total_pmp to wood.kiln.start"
+	]
+	instance stop_command : DTDFVocab:Action [
+	    DTDFVocab:IsAutomatic false
+	    DTDFVocab:hasTimeScale baseDesc:rt
+	    base:desc "Operator-triggered stop via dashboard Stop Kiln button; publishes stopped status to wood.kiln.sensor; resets Godot UI to door-open state"
+	]
+	instance control_action : DTDFVocab:Action [
 	    DTDFVocab:IsAutomatic true
-	    base:desc "Current drying phase index and name, air velocity, fan direction, duration remaining, and progress percentage"
+	    DTDFVocab:hasTimeScale baseDesc:rt
+	    base:desc "Automatic DT control actions published to wood.kiln.control every 10 real seconds minimum: Ts setpoint adjustment (+-2C, max cumulative +-6C) for SLOW_DRYING/FAST_DRYING/EXTEND_CYCLE/CHECK_OVERDRYING; damper aperture adjustment (25% steps, 20% minimum during active drying) for DTAB HIGH/LOW. Actions restricted to active drying phases only — not during Heating or Equalization. Operator can reset all adjustments via dashboard override button."
 	]
 
-	instance operator : DTDFVocab:Agent [
-		base:desc "Sawmill operator who selects and validates batch loading scenarios from the web dashboard, initiates and supervises drying cycles, and can override automatic DT control actions via the Reset DT Adjustments button"
+	// DT CHARACTERISTICS
+
+	// C5: Virtual to Physical Interaction
+	instance virtual_to_physical : DTDFVocab:VirtualToPhysical [
+	    base:desc "Operator-triggered: cycle start via RabbitMQ (wood.kiln.start) and stop via HTTP POST /api/stop. Automatic DT control on wood.kiln.control: Ts setpoint adjustment (+-2C steps, +-6C cumulative cap) for SLOW_DRYING, FAST_DRYING, EXTEND_CYCLE, CHECK_OVERDRYING; damper aperture (25% steps, 20% minimum during active drying) for DTAB HIGH/LOW. All automatic actions restricted to active drying phases (not Heating/Equalization). Operator override via Reset DT Adjustments button resets Ts to 0 and dampers to minimum."
 	]
 
-	instance drying_chamber : DTDFVocab:Environment [
-		base:contains lumber_load
-		base:contains surrounding_air
-		base:contains external_air
-		base:contains lumber_inventory
+	// C7: TimeScale
+	instance twinning_time_scale : DTDFVocab:TimeScale [
+	    base:desc "Sensor data published every 2 real seconds regardless of TIME_SCALE. Near Real-time: dashboard and Godot visualization. Slower-than-RT: deviation detection, intelligent control (min 10s interval), and Z3 formal verification. Faster-than-RT: TIME_SCALE adjustable from 1x to 600x via dashboard slider."
 	]
-	instance lumber_load : DTDFVocab:Component [
-		base:desc "Lumber lots stacked on two rails inside the kiln; species EPN, PG, or SAP"
+
+	// C8: Multiplicity
+	instance multiplicity : DTDFVocab:Multiplicity [
+	    base:desc "Single kiln DT with one active drying cycle at a time. No composition of multiple DTs. One validated scenario loaded at a time. Multi-kiln multiplicity identified as a planned extension."
 	]
-	instance surrounding_air : DTDFVocab:Component [
-		base:desc "Hot humid air circulated by the fan; properties determined by Ts, Th, and equilibrium moisture content"
+
+	// C9: LifeCycleStage
+	instance life_cycle_stage : DTDFVocab:LifeCycleStage [
+	    base:desc "Supports the service phase only: execute (batch validation and real-time monitoring), analyse (deviation detection and Z3 formal verification), evolve (automatic Ts and damper adjustment during active drying phases), save (sensor history and post-drying report), and terminate (cycle completion or forced stop). DT represents the kiln as-operated."
 	]
-	instance external_air : DTDFVocab:Component [
-	    base:desc "Ambient air outside the kiln; influences thermal losses through the kiln walls but is not explicitly controlled"
+
+	// C12: Constellation
+	instance constellation : DTDFVocab:Constellation [
+	    base:desc "Orchestrated via Docker Compose: Python backend (Simulator, Dashboard, Z3 audit) and RabbitMQ run in containers; Godot 4.3 C# runs on the host machine. Communication uses AMQP (RabbitMQ) for sensor streaming, cycle start, and intelligent control; HTTP REST (FastAPI) for dashboard and scenario management."
 	]
-	instance lumber_inventory : DTDFVocab:Component [
-	    base:desc "Green lumber inventory stored outside the kiln awaiting drying; 200 lots generated by seed.py with species (EPN, PG, SAP), width (4, 6, 8 inches), length, and initial MC attributes; used by the DT for batch loading generation and optimization"
+
+	// C13: EvolutionStage
+	instance evolution_stage : DTDFVocab:EvolutionStage [
+		base:desc "Engineered following a POC-first approach for the course LOG6310E. 6 milestones: M1 simulator + RabbitMQ + Docker, M2 batch loading optimization (Greedy than MILP single-phase + Ward + Z3 formal verification), M3 Godot 3D visualization, M4 MC estimation + FastAPI dashboard, M5 deviation detection and recommendations, M6 intelligent control layer (Ts + dampers, active phases only). M1-M5: Digital Shadow. M6: full Digital Twin."
+	]
+	
+	// C14: FidelityConsideration
+	instance fidelity_consideration : DTDFVocab:FidelityConsideration [
+	    base:desc "Models based on established wood science literature. Recipes R40/R44 and deviation rules derived from La Doré industrial practice. MC curves qualitatively consistent with industrial observations. K_DRYING not experimentally calibrated. Damper effect modeled as Th increase proportional to aperture (1.5C at 100%). No CFD airflow modeling. POC not formally validated against La Doré experimental data."
+	]
+	
+	// C15: TechnicalConnection
+	instance technical_connection : DTDFVocab:TechnicalConnection [
+	    base:desc "AMQP via RabbitMQ (port 5672): sensor streaming, cycle start, and intelligent control commands. HTTP REST via FastAPI (port 8080): dashboard interaction and cycle control. All communication on localhost and Docker internal network. No physical kiln connection, PT emulated by simulator."
+	]
+	
+	// C16: DT hosting/deployment
+	instance deployment : DTDFVocab:Deployment [
+	    base:desc "Deployed locally via Docker Compose."
+	]
+	
+	// C18: Horizontal Integration
+	instance horizontal_integration : DTDFVocab:HoriIntegration [
+	    base:desc "No horizontal integration with external systems. Standalone DT with synthetically generated inventory (200 lots with clustered MC distribution). No connection to external systems or other DTs."
+	]
+	
+	// C19: Data ownership and privacy
+	instance data_ownership_privacy : DTDFVocab:DataOwnershipPrivacy [
+	    base:desc "Synthetic inventory data: no personal or sensitive information. Drying recipes and rules provided by La Doré industrial partner. MC model parameters informed by proprietary industrial data used within academic context only. No external data transmission."
+	]
+	
+	// C20: Standardization
+	instance standardization : DTDFVocab:Standardization [
+	    base:desc "Communication via AMQP (RabbitMQ) and JSON payloads. Recipes and parameters follow La Doré industrial norms. Formal verification via Z3 SMT solver (SMT-LIB standard). Aligned with ISO 23247 "
+	]
+	
+	// C21: Security and safety considerations
+	instance security_safety : DTDFVocab:SecuritySafety [
+	    base:desc "No physical safety risk: DT controls simulation only. Automatic control actions bounded: Ts adjustment capped at +-6C cumulative, dampers never below 20% during active drying. Local deployment with no external network exposure."
 	]
 }
