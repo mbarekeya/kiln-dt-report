@@ -1,236 +1,245 @@
 Services :
-	kiln_loading_optimization_service
-		type : NamedIndividual/Service/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/DTComponent/ConceptInstance
-		atStage : operation
-		provides : loading_plans/validated_load
-		desc : Builds the available inventory from the package records and computes one loading plan per lumber dimension (2x4, 2x6, 2x8) with a lexicographic MILP
-		sameAs : kiln_loading_optimization_service
-		enabledBy : docker/highs/production_data_collector/rabbit_mq
 	mc_estimation_service
-		type : NamedIndividual/Service/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/DTComponent/ConceptInstance
-		atStage : operation
-		provides : estimated_mc
-		desc : Estimates the MC of the load from the dry-bulb and wet-bulb temperatures of the kiln and compares it with the planned MC
+		type : Thing/DTComponent/Service/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : mc_estimation_service
-		enabledBy : docker/simulator/rabbit_mq
-	monitoring_service
-		type : NamedIndividual/Service/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/DTComponent/ConceptInstance
+		desc : Estimates the MC of the load from the dry-bulb and wet-bulb temperatures of the kiln and compares it with the planned MC
 		atStage : operation
-		provides : cycle_report/drying_recommendation/monitoring_dashboard
-		HasVisualization : true
-		desc : Web dashboard where operators request and validate loading plans, follow the drying cycle, and review recommendations
-		sameAs : monitoring_service
-		enabledBy : docker/simulator/fastapi/rabbit_mq
+		enabledBy : data_manager/simulator/docker
+		provides : estimated_mc
 	visualization_3d_service
-		type : NamedIndividual/Service/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/DTComponent/ConceptInstance
+		type : Thing/DTComponent/Service/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/NamedIndividual/ConceptInstance
+		sameAs : visualization_3d_service
+		desc : 3D view of the kiln reproducing the arrangement of the validated load
 		atStage : operation
+		enabledBy : data_manager/godot
 		provides : kiln_3d_view
 		HasVisualization : true
-		desc : 3D view of the kiln reproducing the arrangement of the validated load
-		sameAs : visualization_3d_service
-		enabledBy : godot/rabbit_mq
+	monitoring_service
+		type : Thing/DTComponent/Service/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/NamedIndividual/ConceptInstance
+		sameAs : monitoring_service
+		desc : Web dashboard where operators request and validate loading plans, follow the drying cycle, and review recommendations
+		atStage : operation
+		enabledBy : data_manager/docker/fastapi
+		provides : cycle_report/monitoring_dashboard/drying_recommendation
+		HasVisualization : true
+	kiln_loading_optimization_service
+		type : Thing/DTComponent/Service/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/NamedIndividual/ConceptInstance
+		sameAs : kiln_loading_optimization_service
+		desc :  computes one loading plan per lumber dimension (2x4, 2x6, 2x8) with a lexicographic MILP
+		atStage : operation
+		enabledBy : data_manager/docker/highs/sqlite_database/production_data_collector
+		provides : loading_plans/validated_load
 Enablers :
-	docker
-		type : NamedIndividual/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/DTComponent/ConceptInstance
-		enables : kiln_loading_optimization_service/mc_estimation_service/monitoring_service
-		desc : Docker containers: one container per service and one for the message broker
-		sameAs : docker
+	data_manager
+		type : Thing/DTComponent/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/NamedIndividual/ConceptInstance
+		sameAs : data_manager
+		desc : Only accessor of the database: derives the available inventory from the package records and the validated loads, records the kiln state during drying, and provides these data to the services
+		enables : mc_estimation_service/visualization_3d_service/monitoring_service/kiln_loading_optimization_service
 	simulator
-		type : NamedIndividual/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/DTComponent/ConceptInstance
-		enables : mc_estimation_service/monitoring_service
-		desc : Kiln simulator following the drying schedules of the sawmill; generates the dry-bulb and wet-bulb temperatures of the kiln
+		type : Thing/DTComponent/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/NamedIndividual/ConceptInstance
 		sameAs : simulator
-		hasInput : drying_model/drying_schedule_model/kiln_log_data
-	fastapi
-		type : NamedIndividual/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/DTComponent/ConceptInstance
-		enables : monitoring_service
-		desc : Python FastAPI web server of the dashboard; relays operator requests to the services through RabbitMQ
-		sameAs : fastapi
+		desc : Kiln simulator following the drying schedules of the sawmill; generates the dry-bulb and wet-bulb temperatures of the kiln
+		enables : mc_estimation_service
+		hasInput : kiln_log_data/drying_model/drying_schedule_model
+	docker
+		type : Thing/DTComponent/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/NamedIndividual/ConceptInstance
+		sameAs : docker
+		desc : Docker containers: one container per service and one for the message broker
+		enables : mc_estimation_service/monitoring_service/kiln_loading_optimization_service
 	godot
-		type : NamedIndividual/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/DTComponent/ConceptInstance
-		enables : visualization_3d_service
-		desc : Godot game engine used for the 3D view of the kiln
+		type : Thing/DTComponent/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/NamedIndividual/ConceptInstance
 		sameAs : godot
+		desc : Godot game engine used for the 3D view of the kiln
+		enables : visualization_3d_service
 		hasInput : kiln_3d_model
+	fastapi
+		type : Thing/DTComponent/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/NamedIndividual/ConceptInstance
+		sameAs : fastapi
+		desc : Python FastAPI web server of the dashboard; relays operator requests to the services through RabbitMQ
+		enables : monitoring_service
 	highs
-		type : NamedIndividual/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/DTComponent/ConceptInstance
-		enables : kiln_loading_optimization_service
-		desc : HiGHS MILP solver called through SciPy
+		type : Thing/DTComponent/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/NamedIndividual/ConceptInstance
 		sameAs : highs
+		desc : HiGHS MILP solver called through SciPy
+		enables : kiln_loading_optimization_service
 		hasInput : loading_milp_model
+	rabbit_mq
+		type : Thing/DTComponent/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/NamedIndividual/ConceptInstance
+		sameAs : rabbit_mq
+		desc : RabbitMQ message broker carrying all messages between the data manager, the services, and the 3D client
+		hasInput : simulated_temperature_data
+		IsCommEnabler : true
+	sqlite_database
+		type : Thing/DTComponent/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/NamedIndividual/ConceptInstance
+		sameAs : sqlite_database
+		desc : SQLite database storing the package records, the validated loads, and the kiln state
+		enables : kiln_loading_optimization_service
+		hasInput : package_data
 	production_data_collector
-		type : NamedIndividual/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/DTComponent/ConceptInstance
+		type : Thing/DTComponent/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/NamedIndividual/ConceptInstance
+		sameAs : production_data_collector
+		desc : Collects the package records from the production monitoring system of the sawmill every hour
 		enables : kiln_loading_optimization_service
 		IsCommEnabler : true
-		desc : Collects the package records from the production monitoring system of the sawmill every hour
-		sameAs : production_data_collector
-		hasInput : package_data
-	rabbit_mq
-		type : NamedIndividual/Enabler/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/DTComponent/ConceptInstance
-		enables : kiln_loading_optimization_service/mc_estimation_service/monitoring_service/visualization_3d_service
-		IsCommEnabler : true
-		desc : RabbitMQ message broker; the services communicate only through it
-		sameAs : rabbit_mq
-		hasInput : simulated_temperature_data
 Models :
-	drying_model
-		type : NamedIndividual/Model/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/DTComponent/Input/ConceptInstance
-		inputTo : simulator
-		desc : Falling-rate drying kinetics dMC/dt = -k(MC - EMC) with Hailwood-Horrobin EMC; the drying constant k is not calibrated
-		sameAs : drying_model
-	drying_schedule_model
-		type : NamedIndividual/Model/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/DTComponent/Input/ConceptInstance
-		inputTo : simulator
-		desc : Drying schedule of the sawmill for spruce and jack pine, target MC 15 %; initial MC of 44 % (black spruce) and 48 % (jack pine)
-		sameAs : drying_schedule_model
 	kiln_3d_model
-		type : NamedIndividual/Model/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/DTComponent/Input/ConceptInstance
-		inputTo : godot
-		desc : 3D scene of the kiln with its lanes and lumber packages
+		type : Thing/DTComponent/Model/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/Input/NamedIndividual/ConceptInstance
 		sameAs : kiln_3d_model
+		desc : 3D scene of the kiln with its lanes and lumber packages
+		inputTo : godot
 	loading_milp_model
-		type : NamedIndividual/Model/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/DTComponent/Input/ConceptInstance
-		inputTo : highs
-		desc : Column-based MILP: columns of four packages of the same length placed in the kiln lanes; maximizes the loaded volume, then prioritizes the oldest packages
+		type : Thing/DTComponent/Model/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/Input/NamedIndividual/ConceptInstance
 		sameAs : loading_milp_model
+		desc : Column-based MILP: columns of four packages of the same length placed in the kiln lanes; maximizes the loaded volume, then prioritizes the oldest packages
+		inputTo : highs
+	drying_model
+		type : Thing/DTComponent/Model/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/Input/NamedIndividual/ConceptInstance
+		sameAs : drying_model
+		desc : Falling-rate drying kinetics dMC/dt = -k(MC - EMC) with Hailwood-Horrobin EMC; the drying constant k is not calibrated
+		inputTo : simulator
+	drying_schedule_model
+		type : Thing/DTComponent/Model/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/Input/NamedIndividual/ConceptInstance
+		sameAs : drying_schedule_model
+		desc : Drying schedule of the sawmill for spruce and jack pine, target MC 15 %; initial MC of 44 % (black spruce) and 48 % (jack pine)
+		inputTo : simulator
 ProvidedThings :
-	cycle_report
-		type : NamedIndividual/Insight/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/ConnectionComponent/ProvidedThing/ConceptInstance
-		hasTimeScale : slower_trt
-		desc : Report generated at the end of the drying cycle
-		sameAs : cycle_report
-		providedBy : monitoring_service
-	drying_recommendation
-		type : NamedIndividual/Action/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/ConnectionComponent/ProvidedThing/AutomaticEnabledThing/ConceptInstance
-		hasTimeScale : slower_trt
-		IsAutomatic : false
-		desc : Recommendations to the kiln operator during the cycle, who can review or override them
-		sameAs : drying_recommendation
-		providedBy : monitoring_service
 	estimated_mc
-		type : NamedIndividual/Insight/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/ConnectionComponent/ProvidedThing/ConceptInstance
-		hasTimeScale : rt
-		desc : Estimated MC and its deviation from the planned MC during the drying cycle
+		type : ConnectionComponent/Thing/Insight/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/ProvidedThing/NamedIndividual/ConceptInstance
 		sameAs : estimated_mc
+		desc : Estimated MC and its deviation from the planned MC during the drying cycle
 		providedBy : mc_estimation_service
-	kiln_3d_view
-		type : NamedIndividual/Insight/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/ConnectionComponent/ProvidedThing/ConceptInstance
 		hasTimeScale : rt
-		desc : 3D view of the validated load inside the kiln
-		sameAs : kiln_3d_view
-		providedBy : visualization_3d_service
-	loading_plans
-		type : NamedIndividual/Insight/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/ConnectionComponent/ProvidedThing/ConceptInstance
-		hasTimeScale : slower_trt
-		desc : One loading plan per dimension with its loaded volume, lane fill, and mean package age
-		sameAs : loading_plans
-		providedBy : kiln_loading_optimization_service
-	validated_load
-		type : NamedIndividual/Action/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/ConnectionComponent/ProvidedThing/AutomaticEnabledThing/ConceptInstance
-		hasTimeScale : slower_trt
-		IsAutomatic : false
-		desc : Loading plan selected and validated by the planner, then applied manually
-		sameAs : validated_load
-		providedBy : kiln_loading_optimization_service
-	monitoring_dashboard
-		type : NamedIndividual/Insight/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/ConnectionComponent/ProvidedThing/ConceptInstance
-		hasTimeScale : rt
-		desc : Dashboard showing the loading plans, the estimated and planned MC, the drying progress, and recommendations
-		sameAs : monitoring_dashboard
+	cycle_report
+		type : ConnectionComponent/Thing/Insight/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/ProvidedThing/NamedIndividual/ConceptInstance
+		sameAs : cycle_report
+		desc : Report generated at the end of the drying cycle
 		providedBy : monitoring_service
+		hasTimeScale : slower_trt
+	monitoring_dashboard
+		type : ConnectionComponent/Thing/Insight/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/ProvidedThing/NamedIndividual/ConceptInstance
+		sameAs : monitoring_dashboard
+		desc : Dashboard showing the loading plans, the estimated and planned MC, the drying progress, and recommendations
+		providedBy : monitoring_service
+		hasTimeScale : rt
+	drying_recommendation
+		type : ConnectionComponent/Action/Thing/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/ProvidedThing/AutomaticEnabledThing/NamedIndividual/ConceptInstance
+		sameAs : drying_recommendation
+		desc : Recommendations to the kiln operator during the cycle, who can review or override them
+		providedBy : monitoring_service
+		hasTimeScale : slower_trt
+		IsAutomatic : false
+	loading_plans
+		type : ConnectionComponent/Thing/Insight/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/ProvidedThing/NamedIndividual/ConceptInstance
+		sameAs : loading_plans
+		desc : One loading plan per dimension with its loaded volume, lane fill, and mean package age
+		providedBy : kiln_loading_optimization_service
+		hasTimeScale : slower_trt
+	validated_load
+		type : ConnectionComponent/Action/Thing/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/ProvidedThing/AutomaticEnabledThing/NamedIndividual/ConceptInstance
+		sameAs : validated_load
+		desc : Loading plan selected and validated by the planner, then applied manually
+		providedBy : kiln_loading_optimization_service
+		hasTimeScale : slower_trt
+		IsAutomatic : false
+	kiln_3d_view
+		type : ConnectionComponent/Thing/Insight/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/ProvidedThing/NamedIndividual/ConceptInstance
+		sameAs : kiln_3d_view
+		desc : 3D view of the validated load inside the kiln
+		providedBy : visualization_3d_service
+		hasTimeScale : rt
 Data transmitted :
-	kiln_log_trans
-		type : NamedIndividual/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/ConnectionComponent/DataTransmitted/AutomaticEnabledThing/ConceptInstance
-		hasTimeScale : slower_trt
-		IsAutomatic : false
-		desc : Loads recorded manually by operators in the kiln log after drying: loading and drying times, loaded length and volume, length lost
-		sameAs : kiln_log_trans
-		asData : kiln_log_data
 	mc_tests_trans
-		type : NamedIndividual/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/ConnectionComponent/DataTransmitted/AutomaticEnabledThing/ConceptInstance
+		type : ConnectionComponent/Thing/DataTransmitted/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/AutomaticEnabledThing/NamedIndividual/ConceptInstance
+		sameAs : mc_tests_trans
+		desc : Results of the manual MC tests, recorded in the kiln log
 		hasTimeScale : slower_trt
 		IsAutomatic : false
-		desc : Results of the manual MC tests, recorded in the kiln log
-		sameAs : mc_tests_trans
 		asData : kiln_log_data
 		producedFrom : mc_meter
+	kiln_log_trans
+		type : ConnectionComponent/Thing/DataTransmitted/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/AutomaticEnabledThing/NamedIndividual/ConceptInstance
+		sameAs : kiln_log_trans
+		desc : Loads recorded manually by operators in the kiln log after drying: loading and drying times, loaded length and volume, length lost
+		hasTimeScale : slower_trt
+		IsAutomatic : false
+		asData : kiln_log_data
 	package_records_trans
-		type : NamedIndividual/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/ConnectionComponent/DataTransmitted/AutomaticEnabledThing/ConceptInstance
+		type : ConnectionComponent/Thing/DataTransmitted/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/AutomaticEnabledThing/NamedIndividual/ConceptInstance
+		sameAs : package_records_trans
+		desc : Package records (dimension, length, number of pieces, production date) collected automatically every hour from the production monitoring system
 		hasTimeScale : slower_trt
 		IsAutomatic : true
-		desc : Package records (dimension, length, number of pieces, production date) collected automatically every hour from the production monitoring system
-		sameAs : package_records_trans
 		asData : package_data
 		producedFrom : production_monitoring_system
 Sensors :
 	mc_meter
-		type : NamedIndividual/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/ConnectionComponent/SensingComponent/ConceptInstance
-		desc : Moisture meter used for the manual MC tests performed near the end of the cycle and after drying
+		type : ConnectionComponent/Thing/SensingComponent/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : mc_meter
+		desc : Moisture meter used for the manual MC tests performed near the end of the cycle and after drying
 		producedData : mc_tests_trans
 	th_sensor
-		type : NamedIndividual/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/ConnectionComponent/SensingComponent/ConceptInstance
-		desc : Wet-bulb temperature sensor of the kiln; its data remain in the kiln controller, which is not connected to the DT
+		type : ConnectionComponent/Thing/SensingComponent/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : th_sensor
+		desc : Wet-bulb temperature sensor of the kiln; its data remain in the kiln controller, which is not connected to the DT
 	production_monitoring_system
-		type : NamedIndividual/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/ConnectionComponent/SensingComponent/ConceptInstance
-		desc : Production monitoring system recording each package as it leaves the stacking line; updated every hour
+		type : ConnectionComponent/Thing/SensingComponent/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : production_monitoring_system
+		desc : Production monitoring system recording each package as it leaves the stacking line; updated every hour
 		producedData : package_records_trans
 	ts_sensor
-		type : NamedIndividual/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/ConnectionComponent/SensingComponent/ConceptInstance
-		desc : Dry-bulb temperature sensor of the kiln; its data remain in the kiln controller, which is not connected to the DT
+		type : ConnectionComponent/Thing/SensingComponent/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : ts_sensor
+		desc : Dry-bulb temperature sensor of the kiln; its data remain in the kiln controller, which is not connected to the DT
 System :
 	kiln
-		type : NamedIndividual/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/ConceptInstance
-		desc : Batch kiln loaded with two trains of 88 ft (26.8 m), each carrying two lanes of packages side by side, up to four packages high
+		type : Thing/ContainedElement/ImplementationThing/Component/DescribedThing/NamedIndividual/ConceptInstance
 		sameAs : kiln
+		desc : Batch kiln loaded with two trains of 88 ft (26.8 m), each carrying two lanes of packages side by side, up to four packages high
 		isContainedIn : drying_operations
 	yard
-		type : NamedIndividual/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/ConceptInstance
-		desc : Yard where packages are stored before drying; forms the inventory waiting to be loaded into the kiln
+		type : Thing/ContainedElement/ImplementationThing/Component/DescribedThing/NamedIndividual/ConceptInstance
 		sameAs : yard
+		desc : Yard where packages are stored before drying; forms the inventory waiting to be loaded into the kiln
 		isContainedIn : drying_operations
 	stacking_line
-		type : NamedIndividual/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/ConceptInstance
-		desc : Stacking line where green boards are grouped into lumber packages
+		type : Thing/ContainedElement/ImplementationThing/Component/DescribedThing/NamedIndividual/ConceptInstance
 		sameAs : stacking_line
+		desc : Stacking line where green boards are grouped into lumber packages
 		isContainedIn : drying_operations
 	kiln_controller
-		type : NamedIndividual/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/TimeScaleThing/ConnectionComponent/ActingComponent/ConceptInstance
-		desc : Controller running the kiln according to the drying schedule
+		type : ActingComponent/ConnectionComponent/Thing/ContainedElement/ImplementationThing/Component/DescribedThing/TimeScaleThing/NamedIndividual/ConceptInstance
 		sameAs : kiln_controller
+		desc : Controller running the kiln according to the drying schedule
 		isContainedIn : drying_operations
 System environnement :
 	sawing_line
-		type : NamedIndividual/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/ConceptInstance
-		desc : Sawing line producing the green boards
+		type : Thing/ContainedElement/ImplementationThing/Component/DescribedThing/NamedIndividual/ConceptInstance
 		sameAs : sawing_line
+		desc : Sawing line producing the green boards
 		isContainedIn : sawmill_environment
 	other_mills
-		type : NamedIndividual/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/ConceptInstance
-		desc : Other mills from which packages are received in the yard
+		type : Thing/ContainedElement/ImplementationThing/Component/DescribedThing/NamedIndividual/ConceptInstance
 		sameAs : other_mills
+		desc : Other mills from which packages are received in the yard
 		isContainedIn : sawmill_environment
 Data :
 	kiln_log_data
-		type : NamedIndividual/Data/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/DTComponent/Input/ConceptInstance
-		fromData : kiln_log_trans/mc_tests_trans
-		inputTo : simulator
-		desc : Kiln log of the sawmill: unused kiln length, MC at the final test, and cycle durations recorded for the studied kiln
+		type : Thing/DTComponent/Data/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/Input/NamedIndividual/ConceptInstance
 		sameAs : kiln_log_data
-	package_data
-		type : NamedIndividual/Data/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/DTComponent/Input/ConceptInstance
-		fromData : package_records_trans
-		inputTo : production_data_collector
-		desc : Package records used to build the inventory available for kiln loading
-		sameAs : package_data
+		desc : Kiln log of the sawmill: unused kiln length, MC at the final test, and cycle durations recorded for the studied kiln
+		fromData : mc_tests_trans/kiln_log_trans
+		inputTo : simulator
 	simulated_temperature_data
-		type : NamedIndividual/Data/FidelityThing/ContainedElement/ImplementationThing/Component/Thing/DescribedThing/DTComponent/Input/ConceptInstance
-		inputTo : rabbit_mq
-		desc : Dry-bulb and wet-bulb temperatures generated by the simulator and sent to the MC estimation service
+		type : Thing/DTComponent/Data/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/Input/NamedIndividual/ConceptInstance
 		sameAs : simulated_temperature_data
+		desc : Dry-bulb and wet-bulb temperatures generated by the simulator and sent to the MC estimation service
+		inputTo : rabbit_mq
+	package_data
+		type : Thing/DTComponent/Data/FidelityThing/ContainedElement/ImplementationThing/Component/DescribedThing/Input/NamedIndividual/ConceptInstance
+		sameAs : package_data
+		desc : Package records used to build the inventory available for kiln loading
+		fromData : package_records_trans
+		inputTo : sqlite_database
 Rabbit exchange :
 
 Rabbit route :
