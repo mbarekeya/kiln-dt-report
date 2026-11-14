@@ -172,7 +172,7 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 	]
 	// C14
 	instance fidelity_consideration : DTDFVocab:FidelityConsideration [
-		base:desc "The inventory is built from production records and does not account for packages received from other mills. The drying constant k of the MC model is not calibrated, since the MC is not measured during drying.
+		base:desc "The inventory is built from production records and does not account for packages received from other mills. The drying constant k of the MC model is not calibrated, since the MC is not measured during drying."
 	]
 	// C15
 	instance technical_connection : DTDFVocab:TechnicalConnection [
