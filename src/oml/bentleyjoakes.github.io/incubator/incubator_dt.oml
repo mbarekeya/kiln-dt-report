@@ -16,7 +16,7 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 		DTDFVocab:provides loading_plans
 		DTDFVocab:provides validated_load
 		DTDFVocab:atStage baseDesc:operation
-		base:desc "Builds the available inventory from the package records and computes one loading plan per lumber dimension (2x4, 2x6, 2x8) with a lexicographic MILP"
+		base:desc " computes one loading plan per lumber dimension (2x4, 2x6, 2x8) with a lexicographic MILP"
 	]
 	instance mc_estimation_service : DTDFVocab:Service [
 		DTDFVocab:provides estimated_mc
@@ -47,11 +47,18 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 	]
 	instance rabbit_mq : DTDFVocab:Enabler [
 		DTDFVocab:IsCommEnabler true
+		base:desc "RabbitMQ message broker carrying all messages between the data manager, the services, and the 3D client"
+	]
+	instance data_manager : DTDFVocab:Enabler [
 		DTDFVocab:enables kiln_loading_optimization_service
 		DTDFVocab:enables mc_estimation_service
 		DTDFVocab:enables monitoring_service
 		DTDFVocab:enables visualization_3d_service
-		base:desc "RabbitMQ message broker; the services communicate only through it"
+		base:desc "Only accessor of the database: derives the available inventory from the package records and the validated loads, records the kiln state during drying, and provides these data to the services"
+	]
+	instance sqlite_database : DTDFVocab:Enabler [
+		DTDFVocab:enables kiln_loading_optimization_service
+		base:desc "SQLite database storing the package records, the validated loads, and the kiln state"
 	]
 	instance docker : DTDFVocab:Enabler [
 		DTDFVocab:enables kiln_loading_optimization_service
@@ -73,7 +80,6 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 	]
 	instance simulator : DTDFVocab:Enabler [
 		DTDFVocab:enables mc_estimation_service
-		DTDFVocab:enables monitoring_service
 		base:desc "Kiln simulator following the drying schedules of the sawmill; generates the dry-bulb and wet-bulb temperatures of the kiln"
 	]
 
@@ -96,7 +102,7 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 		base:desc "3D scene of the kiln with its lanes and lumber packages"
 	]
 	instance package_data : DTDFVocab:Data [
-		DTDFVocab:inputTo production_data_collector
+		DTDFVocab:inputTo sqlite_database
 		DTDFVocab:fromData pt:package_records_trans
 		base:desc "Package records used to build the inventory available for kiln loading"
 	]
@@ -164,7 +170,7 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 	]
 	// C12
 	instance constellation : DTDFVocab:Constellation [
-		base:desc "Services in Docker containers communicating only through RabbitMQ; Godot client on the host machine; package records collected from the production monitoring system of the sawmill."
+		base:desc "Services in Docker containers communicating only through RabbitMQ; a data manager is the only accessor of the SQLite database; Godot client on the host machine; package records collected from the production monitoring system of the sawmill."
 	]
 	// C13
 	instance evolution_stage : DTDFVocab:EvolutionStage [
