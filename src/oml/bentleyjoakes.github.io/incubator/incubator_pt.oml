@@ -5,77 +5,95 @@ description <https://bentleyjoakes.github.io/incubator/incubator_pt#> as incubat
 	extends <https://bentleyjoakes.github.io/DTDF/desc/baseDesc#> as baseDesc
 
 	instance pt : DTDFVocab:SystemUnderStudy [
-	    DTDFVocab:hasSystem kiln
-	    DTDFVocab:hasAgent operator
-	    DTDFVocab:hasEnvironment drying_chamber
-	    base:desc "An industrial wood drying kiln, containing two rail systems for lumber loading, a reversible fan, steam heating coils, ventilation dampers, and sensors for temperature and humidity monitoring."
+		DTDFVocab:hasSystem drying_operations
+		DTDFVocab:hasAgent planner
+		DTDFVocab:hasAgent kiln_operator
+		DTDFVocab:hasEnvironment sawmill_environment
+		base:desc "Lumber drying operations of a sawmill: green boards are grouped into packages at the stacking line, stored in the yard, and dried in five batch kilns."
 	]
 
-	instance kiln : DTDFVocab:System [
-	    DTDFVocab:purpose "dry lumber to a target moisture content using controlled temperature and humidity phases"
-	    DTDFVocab:multiplicity 1
-	    base:contains fan, heater_coils, door, dampers, rail_1, rail_2
-	]
-	instance rail_1 : DTDFVocab:Component [
-	    base:desc "First lumber rail, holds up to 16 lots of the same species and width"
-	]
-	instance rail_2 : DTDFVocab:Component [
-	    base:desc "Second lumber rail, holds up to 16 lots of the same species and width"
+	instance drying_operations : DTDFVocab:System [
+		DTDFVocab:purpose "dry green lumber packages in batch kilns to a target moisture content, from their production at the stacking line to the end of the drying cycle"
+		DTDFVocab:multiplicity 1
+		base:contains stacking_line, yard, kilns, fans, heater_coils, dampers
+		base:desc "Drying operations from the stacking line to the end of the drying cycle"
 	]
 
-	instance fan : DTDFVocab:ActingComponent [
-		base:desc "Circulates hot air throughout the kiln chamber; speed varies by drying phase and direction reverses every 2 simulated hours"
+	instance stacking_line : DTDFVocab:Component [
+		base:desc "Stacking line where green boards are grouped into lumber packages of the same dimension and length"
+	]
+	instance yard : DTDFVocab:Component [
+		base:desc "Yard where packages are stored before drying; forms the inventory available for kiln loading"
+	]
+	instance kilns : DTDFVocab:Component [
+		base:desc "Five batch kilns of different lengths; the studied kiln is loaded with two trains of 88 ft, each carrying two lanes of packages up to four packages high"
+	]
+
+	instance fans : DTDFVocab:ActingComponent [
+		base:desc "Fans circulating hot air through the load; direction reverses periodically"
 	]
 	instance heater_coils : DTDFVocab:ActingComponent [
-		base:desc "Steam-fed heating coils that raise dry-bulb temperature progressively from ambient to target Ts across drying phases"
-	]
-	instance door : DTDFVocab:ActingComponent [
-		base:desc "Sliding door that closes at cycle start and opens manually by operator at cycle end"
+		base:desc "Heating coils raising the dry-bulb temperature according to the drying schedule"
 	]
 	instance dampers : DTDFVocab:ActingComponent [
-	    base:desc "Ventilation dampers with gradual aperture control (0-100% in steps of 25%). Minimum opening of 20% maintained during active drying phases to evacuate moisture. Fully closed during Heating and Equalization phases. Opened automatically by the DT when DTAB exceeds 25C; closed when DTAB falls below 5C."
+		base:desc "Vents evacuating moist air from the kiln during the drying phases"
 	]
 
+	instance production_monitoring_system : DTDFVocab:SensingComponent [
+		base:desc "Production monitoring system recording each package as it leaves the stacking line (dimension, length, pieces, production date), updated every hour"
+	]
 	instance ts_sensor : DTDFVocab:SensingComponent [
-		base:desc "Dry-bulb temperature sensor (Ts), measures the air temperature inside the kiln chamber in degrees Celsius"
+		base:desc "Dry-bulb temperature sensor of the kiln; its data stay in the kiln controller and are not yet transmitted to the DT"
 	]
 	instance th_sensor : DTDFVocab:SensingComponent [
-		base:desc "Wet-bulb temperature sensor (Th), used with Ts to compute relative humidity via psychrometric equations"
+		base:desc "Wet-bulb temperature sensor of the kiln; its data stay in the kiln controller and are not yet transmitted to the DT"
+	]
+	instance mc_meter : DTDFVocab:SensingComponent [
+		base:desc "Handheld moisture meter used for the manual MC tests near the end of the cycle and after drying"
 	]
 
-	instance sensor_data_trans : DTDFVocab:DataTransmitted [
-	    DTDFVocab:producedFrom ts_sensor, th_sensor
-	    DTDFVocab:hasTimeScale baseDesc:rt
-	    DTDFVocab:IsAutomatic true
-	    base:desc "Published every 2 real seconds to RabbitMQ queue wood.kiln.sensor as JSON payload containing Ts, Th, derived RH, estimated MC, current phase, elapsed hours, fan speed, fan direction, damper aperture percentage, Ts adjustment, last control action, and cycle status"
+	instance package_records_trans : DTDFVocab:DataTransmitted [
+		DTDFVocab:producedFrom production_monitoring_system
+		DTDFVocab:hasTimeScale baseDesc:slower_trt
+		DTDFVocab:IsAutomatic true
+		base:desc "Package records collected automatically from the production monitoring system"
 	]
-	
-	instance phase_data_trans : DTDFVocab:DataTransmitted [
-	    DTDFVocab:hasTimeScale baseDesc:rt
-	    DTDFVocab:IsAutomatic true
-	    base:desc "Current drying phase index and name, air velocity, fan direction, duration remaining, and progress percentage"
+	instance kiln_log_trans : DTDFVocab:DataTransmitted [
+		DTDFVocab:hasTimeScale baseDesc:slower_trt
+		DTDFVocab:IsAutomatic false
+		base:desc "Loads recorded manually by operators after drying: loading and drying times, loaded length and volume, length lost"
+	]
+	instance mc_tests_trans : DTDFVocab:DataTransmitted [
+		DTDFVocab:producedFrom mc_meter
+		DTDFVocab:hasTimeScale baseDesc:slower_trt
+		DTDFVocab:IsAutomatic false
+		base:desc "Results of the manual MC tests, recorded in the kiln log"
 	]
 
-	instance operator : DTDFVocab:Agent [
-		base:desc "Sawmill operator who selects and validates batch loading scenarios from the web dashboard, initiates and supervises drying cycles, and can override automatic DT control actions via the Reset DT Adjustments button"
+	instance planner : DTDFVocab:Agent [
+		base:desc "Planner who prepares kiln loads and validates the loading plans proposed by the DT"
+	]
+	instance kiln_operator : DTDFVocab:Agent [
+		base:desc "Kiln operator who runs the drying cycle, performs the MC tests, decides the end of the cycle, and can review or override the DT recommendations"
 	]
 
-	instance drying_chamber : DTDFVocab:Environment [
-		base:contains lumber_load
-		base:contains surrounding_air
+	instance sawmill_environment : DTDFVocab:Environment [
+		base:contains sawing_line
+		base:contains planing_line
+		base:contains other_yards
 		base:contains external_air
-		base:contains lumber_inventory
+		base:desc "Upstream and downstream operations of the sawmill"
 	]
-	instance lumber_load : DTDFVocab:Component [
-		base:desc "Lumber lots stacked on two rails inside the kiln; species EPN, PG, or SAP"
+	instance sawing_line : DTDFVocab:Component [
+		base:desc "Sawing line producing the green boards (upstream)"
 	]
-	instance surrounding_air : DTDFVocab:Component [
-		base:desc "Hot humid air circulated by the fan; properties determined by Ts, Th, and equilibrium moisture content"
+	instance planing_line : DTDFVocab:Component [
+		base:desc "Planing line receiving the dried lumber (downstream)"
 	]
 	instance external_air : DTDFVocab:Component [
-	    base:desc "Ambient air outside the kiln; influences thermal losses through the kiln walls but is not explicitly controlled"
+		base:desc "Outdoor air; varies with the season and influences both the yard storage and the drying cycle, but is not controlled"
 	]
-	instance lumber_inventory : DTDFVocab:Component [
-	    base:desc "Green lumber inventory stored outside the kiln awaiting drying; 200 lots generated by seed.py with species (EPN, PG, SAP), width (4, 6, 8 inches), length, and initial MC attributes; used by the DT for batch loading generation and optimization"
+	instance other_yards : DTDFVocab:Component [
+		base:desc "Other yards to or from which packages are transferred"
 	]
 }
