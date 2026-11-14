@@ -9,59 +9,53 @@ description <https://bentleyjoakes.github.io/incubator/incubator_pt#> as incubat
 		DTDFVocab:hasAgent planner
 		DTDFVocab:hasAgent kiln_operator
 		DTDFVocab:hasEnvironment sawmill_environment
-		base:desc "Lumber drying operations of a sawmill: green boards are grouped into packages at the stacking line, stored in the yard, and dried in five batch kilns."
+		base:desc "Lumber drying operations of a sawmill: green boards are grouped into lumber packages at the stacking line, stored in the yard, and dried in a batch kiln."
 	]
 
 	instance drying_operations : DTDFVocab:System [
-		DTDFVocab:purpose "dry green lumber packages in batch kilns to a target moisture content, from their production at the stacking line to the end of the drying cycle"
+		DTDFVocab:purpose "dry spruce and jack pine lumber packages (2x4, 2x6, and 2x8) to a target moisture content of 15 %, from their production at the stacking line to the end of the drying cycle"
 		DTDFVocab:multiplicity 1
-		base:contains stacking_line, yard, kilns, fans, heater_coils, dampers
+		base:contains stacking_line, yard, kiln, kiln_controller
 		base:desc "Drying operations from the stacking line to the end of the drying cycle"
 	]
 
 	instance stacking_line : DTDFVocab:Component [
-		base:desc "Stacking line where green boards are grouped into lumber packages of the same dimension and length"
+		base:desc "Stacking line where green boards are grouped into lumber packages"
 	]
 	instance yard : DTDFVocab:Component [
-		base:desc "Yard where packages are stored before drying; forms the inventory available for kiln loading"
+		base:desc "Yard where packages are stored before drying; forms the inventory waiting to be loaded into the kiln"
 	]
-	instance kilns : DTDFVocab:Component [
-		base:desc "Five batch kilns of different lengths; the studied kiln is loaded with two trains of 88 ft, each carrying two lanes of packages up to four packages high"
+	instance kiln : DTDFVocab:Component [
+		base:desc "Batch kiln loaded with two trains of 88 ft (26.8 m), each carrying two lanes of packages side by side, up to four packages high"
 	]
 
-	instance fans : DTDFVocab:ActingComponent [
-		base:desc "Fans circulating hot air through the load; direction reverses periodically"
-	]
-	instance heater_coils : DTDFVocab:ActingComponent [
-		base:desc "Heating coils raising the dry-bulb temperature according to the drying schedule"
-	]
-	instance dampers : DTDFVocab:ActingComponent [
-		base:desc "Vents evacuating moist air from the kiln during the drying phases"
+	instance kiln_controller : DTDFVocab:ActingComponent [
+		base:desc "Controller running the kiln according to the drying schedule"
 	]
 
 	instance production_monitoring_system : DTDFVocab:SensingComponent [
-		base:desc "Production monitoring system recording each package as it leaves the stacking line (dimension, length, pieces, production date), updated every hour"
+		base:desc "Production monitoring system recording each package as it leaves the stacking line; updated every hour"
 	]
 	instance ts_sensor : DTDFVocab:SensingComponent [
-		base:desc "Dry-bulb temperature sensor of the kiln; its data stay in the kiln controller and are not yet transmitted to the DT"
+		base:desc "Dry-bulb temperature sensor of the kiln; its data remain in the kiln controller, which is not connected to the DT"
 	]
 	instance th_sensor : DTDFVocab:SensingComponent [
-		base:desc "Wet-bulb temperature sensor of the kiln; its data stay in the kiln controller and are not yet transmitted to the DT"
+		base:desc "Wet-bulb temperature sensor of the kiln; its data remain in the kiln controller, which is not connected to the DT"
 	]
 	instance mc_meter : DTDFVocab:SensingComponent [
-		base:desc "Handheld moisture meter used for the manual MC tests near the end of the cycle and after drying"
+		base:desc "Moisture meter used for the manual MC tests performed near the end of the cycle and after drying"
 	]
 
 	instance package_records_trans : DTDFVocab:DataTransmitted [
 		DTDFVocab:producedFrom production_monitoring_system
 		DTDFVocab:hasTimeScale baseDesc:slower_trt
 		DTDFVocab:IsAutomatic true
-		base:desc "Package records collected automatically from the production monitoring system"
+		base:desc "Package records (dimension, length, number of pieces, production date) collected automatically every hour from the production monitoring system"
 	]
 	instance kiln_log_trans : DTDFVocab:DataTransmitted [
 		DTDFVocab:hasTimeScale baseDesc:slower_trt
 		DTDFVocab:IsAutomatic false
-		base:desc "Loads recorded manually by operators after drying: loading and drying times, loaded length and volume, length lost"
+		base:desc "Loads recorded manually by operators in the kiln log after drying: loading and drying times, loaded length and volume, length lost"
 	]
 	instance mc_tests_trans : DTDFVocab:DataTransmitted [
 		DTDFVocab:producedFrom mc_meter
@@ -71,29 +65,21 @@ description <https://bentleyjoakes.github.io/incubator/incubator_pt#> as incubat
 	]
 
 	instance planner : DTDFVocab:Agent [
-		base:desc "Planner who prepares kiln loads and validates the loading plans proposed by the DT"
+		base:desc "Planner who prepares kiln loads and validates the loading plan proposed by the DT"
 	]
 	instance kiln_operator : DTDFVocab:Agent [
-		base:desc "Kiln operator who runs the drying cycle, performs the MC tests, decides the end of the cycle, and can review or override the DT recommendations"
+		base:desc "Kiln operator who runs the drying cycle, performs the manual MC tests, decides the end of the cycle, and can review or override the DT recommendations"
 	]
 
 	instance sawmill_environment : DTDFVocab:Environment [
 		base:contains sawing_line
-		base:contains planing_line
-		base:contains other_yards
-		base:contains external_air
-		base:desc "Upstream and downstream operations of the sawmill"
+		base:contains other_mills
+		base:desc "Operations of the sawmill outside the drying operations"
 	]
 	instance sawing_line : DTDFVocab:Component [
-		base:desc "Sawing line producing the green boards (upstream)"
+		base:desc "Sawing line producing the green boards"
 	]
-	instance planing_line : DTDFVocab:Component [
-		base:desc "Planing line receiving the dried lumber (downstream)"
-	]
-	instance external_air : DTDFVocab:Component [
-		base:desc "Outdoor air; varies with the season and influences both the yard storage and the drying cycle, but is not controlled"
-	]
-	instance other_yards : DTDFVocab:Component [
-		base:desc "Other yards to or from which packages are transferred"
+	instance other_mills : DTDFVocab:Component [
+		base:desc "Other mills from which packages are received in the yard"
 	]
 }
