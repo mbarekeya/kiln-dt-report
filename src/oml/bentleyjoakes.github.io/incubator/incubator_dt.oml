@@ -16,12 +16,12 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 		DTDFVocab:provides loading_plans
 		DTDFVocab:provides validated_load
 		DTDFVocab:atStage baseDesc:operation
-		base:desc "Builds the available inventory from the package records and computes one loading plan per lumber dimension with a lexicographic MILP"
+		base:desc "Builds the available inventory from the package records and computes one loading plan per lumber dimension (2x4, 2x6, 2x8) with a lexicographic MILP"
 	]
 	instance mc_estimation_service : DTDFVocab:Service [
 		DTDFVocab:provides estimated_mc
 		DTDFVocab:atStage baseDesc:operation
-		base:desc "Estimates the MC of the load from the dry-bulb and wet-bulb temperatures and compares it with the planned MC"
+		base:desc "Estimates the MC of the load from the dry-bulb and wet-bulb temperatures of the kiln and compares it with the planned MC"
 	]
 	instance monitoring_service : DTDFVocab:Service [
 		DTDFVocab:provides monitoring_dashboard
@@ -29,7 +29,7 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 		DTDFVocab:provides drying_recommendation
 		DTDFVocab:atStage baseDesc:operation
 		DTDFVocab:HasVisualization true
-		base:desc "Web dashboard to request and validate loading plans, follow the drying cycle, and review recommendations"
+		base:desc "Web dashboard where operators request and validate loading plans, follow the drying cycle, and review recommendations"
 	]
 	instance visualization_3d_service : DTDFVocab:Service [
 		DTDFVocab:provides kiln_3d_view
@@ -43,7 +43,7 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 	instance production_data_collector : DTDFVocab:Enabler [
 		DTDFVocab:IsCommEnabler true
 		DTDFVocab:enables kiln_loading_optimization_service
-		base:desc "Collects the package records from the production monitoring system of the sawmill"
+		base:desc "Collects the package records from the production monitoring system of the sawmill every hour"
 	]
 	instance rabbit_mq : DTDFVocab:Enabler [
 		DTDFVocab:IsCommEnabler true
@@ -51,13 +51,13 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 		DTDFVocab:enables mc_estimation_service
 		DTDFVocab:enables monitoring_service
 		DTDFVocab:enables visualization_3d_service
-		base:desc "RabbitMQ AMQP broker; services communicate only through it (RPC queues)"
+		base:desc "RabbitMQ message broker; the services communicate only through it"
 	]
 	instance docker : DTDFVocab:Enabler [
 		DTDFVocab:enables kiln_loading_optimization_service
 		DTDFVocab:enables mc_estimation_service
 		DTDFVocab:enables monitoring_service
-		base:desc "Docker Compose; one container per service and one for the broker"
+		base:desc "Docker containers: one container per service and one for the message broker"
 	]
 	instance highs : DTDFVocab:Enabler [
 		DTDFVocab:enables kiln_loading_optimization_service
@@ -65,51 +65,52 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 	]
 	instance godot : DTDFVocab:Enabler [
 		DTDFVocab:enables visualization_3d_service
-		base:desc "Godot 4 C# client for the 3D view of the kiln"
+		base:desc "Godot game engine used for the 3D view of the kiln"
+	]
+	instance fastapi : DTDFVocab:Enabler [
+		DTDFVocab:enables monitoring_service
+		base:desc "Python FastAPI web server of the dashboard; relays operator requests to the services through RabbitMQ"
 	]
 	instance simulator : DTDFVocab:Enabler [
 		DTDFVocab:enables mc_estimation_service
 		DTDFVocab:enables monitoring_service
-		base:desc "Kiln simulator following the drying schedules of the sawmill; replaces the kiln controllers until they are accessible"
+		base:desc "Kiln simulator following the drying schedules of the sawmill; generates the dry-bulb and wet-bulb temperatures of the kiln"
 	]
 
-	// MODELS / DATA
+	// MODELS / DATA (C10)
 
 	instance loading_milp_model : DTDFVocab:Model [
 		DTDFVocab:inputTo highs
-		base:desc "Column-based MILP: columns of four packages of the same length placed in lanes; maximizes the loaded volume, then prioritizes the oldest packages"
+		base:desc "Column-based MILP: columns of four packages of the same length placed in the kiln lanes; maximizes the loaded volume, then prioritizes the oldest packages"
 	]
 	instance drying_model : DTDFVocab:Model [
 		DTDFVocab:inputTo simulator
-		base:desc "Falling-rate drying kinetics dMC/dt = -k(MC - EMC) with Hailwood-Horrobin EMC; k not yet calibrated"
+		base:desc "Falling-rate drying kinetics dMC/dt = -k(MC - EMC) with Hailwood-Horrobin EMC; the drying constant k is not calibrated"
 	]
 	instance drying_schedule_model : DTDFVocab:Model [
 		DTDFVocab:inputTo simulator
-		base:desc "Drying schedules of the sawmill for spruce and jack pine, target MC 15 %"
+		base:desc "Drying schedule of the sawmill for spruce and jack pine, target MC 15 %; initial MC of 44 % (black spruce) and 48 % (jack pine)"
 	]
 	instance kiln_3d_model : DTDFVocab:Model [
 		DTDFVocab:inputTo godot
-		base:desc "3D scene of the kiln with lanes and lumber packages"
+		base:desc "3D scene of the kiln with its lanes and lumber packages"
 	]
 	instance package_data : DTDFVocab:Data [
 		DTDFVocab:inputTo production_data_collector
 		DTDFVocab:fromData pt:package_records_trans
-		base:desc "Package records stored by the collector and used to build the inventory"
-	]
-	instance kiln_log_data : DTDFVocab:Data [
-		DTDFVocab:inputTo  simulator
-		DTDFVocab:fromData pt:kiln_log_trans
-		DTDFVocab:fromData pt:mc_tests_trans
-		base:desc "Kiln log of the sawmill, used to analyse losses and over-drying and, in future work, to calibrate the drying model"
-	]
-	instance fastapi : DTDFVocab:Enabler [
-		DTDFVocab:enables monitoring_service
-		base:desc "Python FastAPI web server of the monitoring dashboard; relays operator requests to the services through RabbitMQ"
+		base:desc "Package records used to build the inventory available for kiln loading"
 	]
 	instance simulated_temperature_data : DTDFVocab:Data [
 		DTDFVocab:inputTo rabbit_mq
-		base:desc "Dry-bulb and wet-bulb temperatures generated by the simulator and sent to the MC estimation service; will be replaced by the measured temperatures once the kiln controllers are accessible"
+		base:desc "Dry-bulb and wet-bulb temperatures generated by the simulator and sent to the MC estimation service"
 	]
+	instance kiln_log_data : DTDFVocab:Data [
+		DTDFVocab:inputTo simulator
+		DTDFVocab:fromData pt:kiln_log_trans
+		DTDFVocab:fromData pt:mc_tests_trans
+		base:desc "Kiln log of the sawmill: unused kiln length, MC at the final test, and cycle durations recorded for the studied kiln"
+	]
+
 	// INSIGHTS / ACTIONS (C17)
 
 	instance loading_plans : DTDFVocab:Insight [
@@ -122,7 +123,7 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 	]
 	instance monitoring_dashboard : DTDFVocab:Insight [
 		DTDFVocab:hasTimeScale baseDesc:rt
-		base:desc "Dashboard showing the loading plans, MC curves, drying progress, and recommendations"
+		base:desc "Dashboard showing the loading plans, the estimated and planned MC, the drying progress, and recommendations"
 	]
 	instance kiln_3d_view : DTDFVocab:Insight [
 		DTDFVocab:hasTimeScale baseDesc:rt
@@ -130,58 +131,71 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 	]
 	instance cycle_report : DTDFVocab:Insight [
 		DTDFVocab:hasTimeScale baseDesc:slower_trt
-		base:desc "Report generated at the end of the cycle"
+		base:desc "Report generated at the end of the drying cycle"
 	]
 	instance validated_load : DTDFVocab:Action [
 		DTDFVocab:IsAutomatic false
 		DTDFVocab:hasTimeScale baseDesc:slower_trt
-		base:desc "Loading plan validated by the planner and applied manually in the yard"
+		base:desc "Loading plan selected and validated by the planner, then applied manually"
 	]
 	instance drying_recommendation : DTDFVocab:Action [
 		DTDFVocab:IsAutomatic false
 		DTDFVocab:hasTimeScale baseDesc:slower_trt
-		base:desc "Recommendations to the kiln operator, who can review or override them; no command is sent to the kiln"
+		base:desc "Recommendations to the kiln operator during the cycle, who can review or override them"
 	]
 
 	// DT CHARACTERISTICS
 
+	// C5
 	instance virtual_to_physical : DTDFVocab:VirtualToPhysical [
-		base:desc "Manual: loading plans and drying recommendations are applied by operators. No command is sent to the kiln."
+		base:desc "Manual: loading plans and drying recommendations are applied by the operators. No command is sent to the kiln."
 	]
-	instance twinning_time_scale : DTDFVocab:TimeScale [
-		base:desc "Package records collected automatically; loading plans computed on request in about 1 s; simulated temperatures and MC estimates updated continuously during the cycle."
+	// C7
+	instance twinning_time_scale : DTDFVocab:TimeScaleDescription [
+		base:desc "Package records collected automatically every hour; loading plans computed on request in 0.88 s on average; other requests answered in less than 0.06 s; simulated temperatures and MC estimates updated continuously during the drying cycle."
 	]
+	// C8
 	instance multiplicity : DTDFVocab:Multiplicity [
-		base:desc "One DT covering the stacking line, the yard, and one studied kiln; extension to the five kilns of the sawmill is planned."
+		base:desc "One DT for the drying operations of one kiln, from the stacking line to the end of the drying cycle."
 	]
+	// C9
 	instance life_cycle_stage : DTDFVocab:LifeCycleStage [
 		base:desc "Operation stage: preparation of kiln loads and follow-up of the drying cycle."
 	]
+	// C12
 	instance constellation : DTDFVocab:Constellation [
-		base:desc "Services in Docker containers communicating only through RabbitMQ; Godot client on the host machine; production data collected from the sawmill production monitoring system."
+		base:desc "Services in Docker containers communicating only through RabbitMQ; Godot client on the host machine; package records collected from the production monitoring system of the sawmill."
 	]
+	// C13
 	instance evolution_stage : DTDFVocab:EvolutionStage [
-		base:desc "Inventory and loading side: digital shadow (automatic flow from the plant, manual return). Kiln side: digital model (simulated data). Connection to the kiln controllers is planned to close both loops."
+		base:desc "Architecture based on ISO 23247. Inventory and loading side: digital shadow (automatic flow from the plant, decisions applied by operators). Kiln side: digital model (simulated temperatures)."
 	]
+	// C14
 	instance fidelity_consideration : DTDFVocab:FidelityConsideration [
-		base:desc "Inventory built from production records, without transfers between yards. Drying constant k not calibrated, since the MC is not measured during drying. MC model not validated against measured data."
+		base:desc "The inventory is built from production records and does not account for packages already dried or received from other mills. The drying constant k is not calibrated, since the MC is not measured during drying: simulated cycles reach the target MC in 27.4 h (black spruce) and 31.0 h (jack pine), versus 33 to 35 h on average for the studied kiln."
 	]
+	// C15
 	instance technical_connection : DTDFVocab:TechnicalConnection [
-		base:desc "Automatic collection of package records from the production monitoring system; AMQP (RabbitMQ) between services; no connection to the kiln controllers yet."
+		base:desc "Automatic hourly collection of package records from the production monitoring system; AMQP (RabbitMQ) between services. The kiln controller is not connected to the DT."
 	]
+	// C16
 	instance deployment : DTDFVocab:Deployment [
-		base:desc "Deployed locally with Docker Compose."
+		base:desc "Deployed locally on a laptop with Docker containers."
 	]
+	// C18
 	instance horizontal_integration : DTDFVocab:HoriIntegration [
-		base:desc "Integrated with the production monitoring system of the sawmill; not yet with the planning system or the kiln controllers."
+		base:desc "Integrated with the production monitoring system of the sawmill. The planning system and the kiln controller are not connected to the DT."
 	]
+	// C19
 	instance data_ownership_privacy : DTDFVocab:DataOwnershipPrivacy [
 		base:desc "Production and kiln data belong to the industrial partner and are used within an academic collaboration; the partner is not named."
 	]
+	// C20
 	instance standardization : DTDFVocab:Standardization [
 		base:desc "Architecture aligned with ISO 23247; communication via AMQP (RabbitMQ) with JSON payloads."
 	]
+	// C21
 	instance security_safety : DTDFVocab:SecuritySafety [
-		base:desc "No physical safety risk: no command is sent to the kiln, and all decisions remain with the operators."
+		base:desc "No command is sent to the kiln, and all decisions remain with the operators."
 	]
 }
