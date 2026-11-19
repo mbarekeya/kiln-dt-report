@@ -89,13 +89,13 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 		DTDFVocab:inputTo highs
 		base:desc "Column-based MILP: columns of four packages of the same length placed in the kiln lanes; maximizes the loaded volume, then prioritizes the oldest packages"
 	]
-	instance drying_model : DTDFVocab:Model [
+	instance mc_kinetics_model : DTDFVocab:Model [
 		DTDFVocab:inputTo simulator
-		base:desc "Falling-rate drying kinetics dMC/dt = -k(MC - EMC) with Hailwood-Horrobin EMC; the drying constant k is not calibrated"
+		base:desc "MC kinetics of the lumber: dMC/dt = -k(MC - EMC) with Hailwood-Horrobin EMC"
 	]
-	instance drying_schedule_model : DTDFVocab:Model [
+	instance kiln_schedule_model : DTDFVocab:Model [
 		DTDFVocab:inputTo simulator
-		base:desc "Drying schedule of the sawmill for spruce and jack pine, target MC 15 %; initial MC of 44 % (black spruce) and 48 % (jack pine)"
+		base:desc "Drying recipe of the sawmill: dry-bulb and wet-bulb temperature setpoints per phase"
 	]
 	instance kiln_3d_model : DTDFVocab:Model [
 		DTDFVocab:inputTo godot
