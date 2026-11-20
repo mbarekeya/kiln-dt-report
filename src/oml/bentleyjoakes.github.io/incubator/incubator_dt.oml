@@ -5,7 +5,7 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 	extends <https://bentleyjoakes.github.io/DTDF/desc/baseDesc#> as baseDesc
 	extends <https://bentleyjoakes.github.io/incubator/incubator_pt#> as pt
 
-	instance WoodTwin : DTDFVocab:DigitalTwin [
+	instance lumber_drying_dt : DTDFVocab:DigitalTwin [
 		DTDFVocab:purpose "build kiln loads from the packages already produced, estimate and monitor the moisture content of the load during drying, and let operators validate their decisions before executing them"
 		DTDFVocab:multiplicity 1
 	]
@@ -42,7 +42,6 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 
 	instance production_data_collector : DTDFVocab:Enabler [
 		DTDFVocab:IsCommEnabler true
-		DTDFVocab:enables kiln_loading_optimization_service
 		base:desc "Collects the package records from the production monitoring system of the sawmill every hour"
 	]
 	instance rabbit_mq : DTDFVocab:Enabler [
@@ -60,7 +59,7 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 		base:desc "SQLite database storing the package records, the validated loads, and the kiln state"
 	]
 	instance docker : DTDFVocab:Enabler [
-		base:desc "Docker containers: one container per service and one for the message broker"
+		base:desc "Docker containers: one container per service"
 	]
 	instance highs : DTDFVocab:Enabler [
 		DTDFVocab:enables kiln_loading_optimization_service
@@ -76,9 +75,8 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 	]
 	instance simulator : DTDFVocab:Enabler [
 		DTDFVocab:enables mc_estimation_service
-		base:desc "Kiln simulator following the drying schedules of the sawmill; generates the dry-bulb and wet-bulb temperatures of the kiln and sends them to the data manager"
+		base:desc "Kiln simulator following the drying schedules of the sawmill; generates the dry-bulb and wet-bulb temperatures of the kiln, which the data manager provides to the MC estimation service"
 	]
-
 	// MODELS / DATA (C10)
 
 	instance loading_milp_model : DTDFVocab:Model [
