@@ -9,5 +9,5 @@ pygmentsstyle       = "bw"
 pygmentscodefences  = true
 
 [params]
-  sitename = "Digital Twin Reporting Summary"
+  sitename = "Lumber Drying Digital Twin: Reporting Summary"
   disableWebFonts = true
