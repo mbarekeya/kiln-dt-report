@@ -107,8 +107,7 @@ jobs:
           SCREENSHOT_NAME="ci_screenshots/${DATE}_${COMMIT_HASH}.png"
           
           # Trigger the Godot CI/CD server
-          curl -v http://localhost:9090
-          
+          curl -v --retry-connrefused --retry 20 --retry-delay 3 http://localhost:9090          
           # Wait for the screenshot to be taken and saved
           sleep 10
           
