@@ -54,8 +54,8 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 		DTDFVocab:enables mc_estimation_service
 		DTDFVocab:enables monitoring_service
 		DTDFVocab:enables visualization_3d_service
-		base:desc "Only accessor of the database: derives the available inventory from the package records and the validated loads, records the kiln state during drying, and provides these data to the services"
-	]
+		base:desc "Only accessor of the database: derives the available inventory from the package records and the validated loads, receives the kiln temperatures and the estimated MC during drying, and provides these data to the services"
+		]
 	instance sqlite_database : DTDFVocab:Enabler [
 		base:desc "SQLite database storing the package records, the validated loads, and the kiln state"
 	]
@@ -78,7 +78,8 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 		base:desc "Python FastAPI web server of the dashboard; relays operator requests to the services through RabbitMQ"
 	]
 	instance simulator : DTDFVocab:Enabler [
-		base:desc "Kiln simulator following the drying schedules of the sawmill; generates the dry-bulb and wet-bulb temperatures of the kiln"
+		DTDFVocab:enables mc_estimation_service
+		base:desc "Kiln simulator following the drying schedules of the sawmill; generates the dry-bulb and wet-bulb temperatures of the kiln and sends them to the data manager"
 	]
 
 	// MODELS / DATA (C10)
@@ -101,6 +102,7 @@ description <https://bentleyjoakes.github.io/incubator/incubator_dt#> as incubat
 	]
 	instance package_data : DTDFVocab:Data [
 		DTDFVocab:inputTo sqlite_database
+		DTDFVocab:inputTo data_manager
 		DTDFVocab:fromData pt:package_records_trans
 		base:desc "Package records used to build the inventory available for kiln loading"
 	]
